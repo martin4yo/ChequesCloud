@@ -1,0 +1,80 @@
+<div class="bottom-section"> 
+    <div class="left-panel">
+        <div class="container mt-4">
+            <div class="table-container">
+  
+                <table class="table table-bordered text-center caption-top">
+                    <caption class="bg-dark text-white text-center fs-4 fw-bold">Bancos</caption>
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaBancos">
+                            
+                    </tbody>
+                </table>
+                
+                <!-- Paginación -->
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item"><a class="page-link" href="#" id="prevPage">Anterior</a></li>
+                        <li class="page-item disabled"><a class="page-link" href="#" id="currentPage">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#" id="nextPage">Siguiente</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <div class="right-panel">
+        <div class="container d-flex justify-content-center">
+            <div class="card p-4" style="width: 550px;">
+                <h4 class="text-primary text-center mb-4">Registro de Banco</h4>
+                <form id="bancoForm">
+                    <input type="hidden" id="idBanco"> <!-- Campo oculto para manejar la edición -->
+                    <div class="mb-3">
+                        <label for="codigoBanco" class="form-label">Código de Banco</label>
+                        <input type="text" class="form-control w-auto" id="codigoBanco" required maxlength="3" pattern="[0-9]*">
+                    </div>
+                    <div class="mb-3">
+                        <label for="nombreBanco" class="form-label">Nombre de Banco</label>
+                        <input type="text" class="form-control" id="nombreBanco" required maxlength="200">
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Nuevo Banco" id="btnNuevo">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Guardar Banco" style="margin-left: 15px;">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog model-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="pTitleToDelete">
+                ¿Estás seguro de que quieres eliminar este producto?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="position-fixed top-50 start-50 translate-middle p-3" style="z-index: 1050;"></div>
+
+<script src="static/js/bancos.js"></script>

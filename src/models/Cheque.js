@@ -1,0 +1,22 @@
+const { DataTypes } = require("sequelize");
+const sequelize = require("../../config"); // 
+const Banco = require('./Banco')
+
+const Cheque = sequelize.define("Cheque", {
+    banco: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: Banco, // Referencia al modelo Banco
+          key: "id",
+        },
+        allowNull: false,
+      },
+    numero: { type: DataTypes.STRING(50) },
+    emision: { type: DataTypes.DATEONLY },
+    vencimiento : { type: DataTypes.DATEONLY },
+    importe : { type: DataTypes.DOUBLE },
+    nombre :{ type: DataTypes.STRING(250) },
+    conciliado : { type: DataTypes.DATEONLY }
+});
+
+module.exports = Cheque;

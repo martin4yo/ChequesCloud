@@ -1,0 +1,104 @@
+body{
+    font-family: Arial, sans-serif;
+    margin: 10px;
+    padding: 10px;
+    justify-content: center;
+}
+
+.wellcome{
+    text-align: center; 
+    font-size: 2em; 
+    font-family: Arial;
+    padding: 50px;
+    background-color: white;
+}
+
+.box-shd {
+    box-shadow: 5px 5px 10px gray;
+}
+
+.product_list {
+    background-color : white;
+}
+
+.custom-btn{
+    width: 40%;
+    height: 60px;
+    margin-top:30px;
+    font-size: 1.5rem; /* Ajusta el tamaño del texto */
+    height: auto; /* Ajusta el alto al contenido */
+}
+
+.bg-darkblue {
+    background-color: #2958bd !important; /* Azul oscuro personalizado */
+    color: white !important; /* Texto blanco para contraste */
+}
+
+.bg-darkcyan {
+    background-color: rgb(114, 12, 161) !important; /* Azul oscuro personalizado */
+    color: white !important; /* Texto blanco para contraste */
+}
+
+/* Contenedor principal */
+.grid-container {
+    display: grid;
+    grid-template-rows: auto 1fr; /* Fila superior tamaño automático, fila inferior flexible */
+    grid-template-columns: 1fr; /* Una sola columna general */
+    height: 100vh; /* Ocupar toda la pantalla */
+}
+
+/* Sección superior */
+.header {
+    color: white;
+    text-align: start;
+    font-size: 24px;
+}
+
+/* Contenedor de la sección inferior */
+.bottom-section {
+    display: grid;
+    grid-template-columns: 1fr 600px; /* Columna fija + columna flexible */
+}
+
+/* Columna izquierda (fija) */
+.left-panel {
+    margin-top: 0px;
+    padding: 0px;
+}
+
+/* Columna derecha (ocupa el resto) */
+.right-panel {
+    margin-top: 30px;
+    padding: 0px;
+}
+
+.card {
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 0px; /* Alineación arriba dentro del contenedor */
+}
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.5);
+}
+
+.table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 0px;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toggle-switch {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
