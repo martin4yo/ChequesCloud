@@ -25,5 +25,15 @@ router.get("/bancos", async (req, res) => {
       res.render("error", { error : err.message })
     }
   });
-
+  
+  router.get("/cheques", async (req, res) => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/cheques/');
+      const cheques = response.data
+      res.render("cheques", { cheques });
+    } 
+    catch (err) {
+      res.render("error", { error : err.message })
+    }
+  });
 module.exports = router;

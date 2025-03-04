@@ -11,4 +11,8 @@ Banco.associate = (models) => {
     Banco.hasMany(models.Chequera, { foreignKey: "banco" });
 };
 
+Banco.associate = (models) => {
+  Banco.hasMany(models.Cheque, { foreignKey: "banco" });
+};
+
 module.exports = Banco;

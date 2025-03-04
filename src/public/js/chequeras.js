@@ -282,3 +282,4 @@ function mostrarAlerta(mensaje, tipo) {
         toast.remove();
     }, 3000);
 }
+

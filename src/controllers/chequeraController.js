@@ -27,7 +27,7 @@ async function obtenerChequeraPorId(req, res) {
 async function eliminarChequeraPorId(req, res) {
   const { id } = req.params
   const Chequeras = await ChequeraManager.eliminarChequeraPorId(id);
-  res.json({success:true, message : "Chequera eliminado correctamente"});
+  res.json({success:true, message : "Chequera eliminada correctamente"});
 }
 
 module.exports = { crearChequera, obtenerChequeras, obtenerChequeraPorId, eliminarChequeraPorId, modificarChequera};

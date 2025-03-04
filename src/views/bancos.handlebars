@@ -1,10 +1,11 @@
 <div class="bottom-section"> 
     <div class="left-panel">
-        <div class="container mt-4">
+        <div class="card mt-2">
+            <div class="card-header bg-primary text-white text-center fs-5 fw-bold">
+                    Bancos
+                </div>
             <div class="table-container">
-  
-                <table class="table table-bordered text-center caption-top">
-                    <caption class="bg-dark text-white text-center fs-4 fw-bold">Bancos</caption>
+                  <table class="table table-bordered text-center caption-top">
                     <thead class="table-primary">
                         <tr>
                             <th>Código</th>
@@ -29,28 +30,32 @@
         </div>
     </div>
     <div class="right-panel">
-        <div class="container d-flex justify-content-center">
-            <div class="card p-4" style="width: 550px;">
-                <h4 class="text-primary text-center mb-4">Registro de Banco</h4>
-                <form id="bancoForm">
-                    <input type="hidden" id="idBanco"> <!-- Campo oculto para manejar la edición -->
-                    <div class="mb-3">
-                        <label for="codigoBanco" class="form-label">Código de Banco</label>
-                        <input type="text" class="form-control w-auto" id="codigoBanco" required maxlength="3" pattern="[0-9]*">
-                    </div>
-                    <div class="mb-3">
-                        <label for="nombreBanco" class="form-label">Nombre de Banco</label>
-                        <input type="text" class="form-control" id="nombreBanco" required maxlength="200">
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Nuevo Banco" id="btnNuevo">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                        <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Guardar Banco" style="margin-left: 15px;">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                        </button>
-                    </div>
-                </form>
+        <div class="d-flex justify-content-end mt-2">
+            <div class="card" style="width: 550px;">
+                <div class="card-header bg-primary text-white text-center fs-5 fw-bold">
+                    Banco
+                </div>
+                <div class="card-body">
+                    <form id="bancoForm">
+                        <input type="hidden" id="idBanco"> <!-- Campo oculto para manejar la edición -->
+                        <div class="mb-3">
+                            <label for="codigoBanco" class="form-label">Código de Banco</label>
+                            <input type="text" class="form-control w-auto" id="codigoBanco" required maxlength="3" pattern="[0-9]*">
+                        </div>
+                        <div class="mb-3">
+                            <label for="nombreBanco" class="form-label">Nombre de Banco</label>
+                            <input type="text" class="form-control" id="nombreBanco" required maxlength="200">
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Nuevo Banco" id="btnNuevo">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                            <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Guardar Banco" style="margin-left: 15px;">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

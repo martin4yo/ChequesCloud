@@ -49,15 +49,25 @@ body{
 
 /* Sección superior */
 .header {
-    color: white;
+    background: transparent;
     text-align: start;
-    font-size: 24px;
+    font-size: 20px;
+}
+
+.header.box-shd {
+    border-radius: 6px;
+}
+
+.navbar {
+    border-radius: 6px !important;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden; /* Evita esquinas blancas */
 }
 
 /* Contenedor de la sección inferior */
 .bottom-section {
     display: grid;
-    grid-template-columns: 1fr 600px; /* Columna fija + columna flexible */
+    grid-template-columns: 1fr 570px; /* Columna fija + columna flexible */
 }
 
 /* Columna izquierda (fija) */
@@ -68,8 +78,8 @@ body{
 
 /* Columna derecha (ocupa el resto) */
 .right-panel {
-    margin-top: 30px;
     padding: 0px;
+    margin-right: 0px;
 }
 
 .card {
@@ -84,7 +94,6 @@ body{
 
 .table-container {
     background: white;
-    padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-top: 0px;
@@ -102,3 +111,33 @@ body{
     align-items: center;
 }
 
+td, th {
+    width: auto;
+    white-space: nowrap; /* Evita saltos de línea */
+}
+
+.td-container {
+    display: flex;
+    align-items: center; /* Alinea verticalmente */
+    gap: 10px; /* Espacio entre los elementos */
+}
+
+.rotate-icon {
+    transition: transform 0.3s ease-in-out;
+}
+
+.collapsed .rotate-icon {
+    transform: rotate(180deg);
+}
+
+.form-select {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    line-height: 1.5;
+}
+
+.form-label-select {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+    line-height: 1.5;
+}
