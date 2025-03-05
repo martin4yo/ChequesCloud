@@ -1,4 +1,4 @@
-const sequelize = require("../../config"); // 
+const { sequelize } = require("../../config"); // 
 const Banco = require('./Banco');
 const Cheque = require('./Cheque');
 const Chequera = require('./Chequera');

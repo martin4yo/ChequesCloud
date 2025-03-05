@@ -43,7 +43,7 @@ app.engine("handlebars", handlebars.engine({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "./src/views"));
 
-app.use("/static", express.static(path.join(__dirname, "./src/public")));
+app.use("/static", express.static(path.join(__dirname, "public")));
 
 // PARA VALIDACION DE SESIONES
 // Configuración de sesiones

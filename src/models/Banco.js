@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../../config"); // 
+const { sequelize } = require("../../config"); // 
 
 const Banco = sequelize.define("Banco", {
     codigo: { type: DataTypes.STRING(3) },
