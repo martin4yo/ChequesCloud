@@ -44,11 +44,12 @@ async function exportarCheques(req, res) {
     // Definir las columnas del Excel
     worksheet.columns = [
         { header: "ID", key: "id", width: 10 },
-        { header: "Banco", key: "banco", width: 20 },
-        { header: "Nombre", key: "nombre", width: 20 },
+        { header: "Banco", key: "banco", width: 40 },
+        { header: "Nombre", key: "nombre", width: 60 },
         { header: "Fecha Emisión", key: "emision", width: 15 },
         { header: "Fecha Vencimiento", key: "vencimiento", width: 15 },
-        { header: "Importe", key: "importe", width: 15 }
+        { header: "Importe", key: "importe", width: 15 },
+        { header: "Fecha Conciliacion", key: "fechaconciliacion", width: 15 },
     ];
 
     // Agregar los datos
@@ -57,12 +58,28 @@ async function exportarCheques(req, res) {
             id: cheque.id,
             banco: cheque.Banco.nombre,
             nombre: cheque.nombre,
-            emision: cheque.emision, // Formato YYYY-MM-DD
-            vencimiento: cheque.vencimiento,
-            importe: cheque.importe.toFixed(2) // Formatear importe con 2 decimales
+            emision: new Date(cheque.emision), // Formato YYYY-MM-DD
+            vencimiento: new Date(cheque.vencimiento),
+            importe: Number(cheque.importe.toFixed(2)), // Formatear importe con 2 decimales
+            fechaconciliacion: cheque.conciliado === true ? new Date(cheque.fechaconciliacion) : ""
         });
     });
 
+    // Configurar formato
+    worksheet.getRow(1).font = { bold: true };
+
+    // Obtener la última fila con datos
+    const lastRow = worksheet.rowCount;
+
+    // Insertar una fila con la suma en la columna "Edad" (columna D)
+    worksheet.getCell(`F${lastRow + 1}`).value = { formula: `SUM(F2:F${lastRow})` };
+    // Poner en negrita el total
+    worksheet.getRow(lastRow + 1).font = { bold: true };
+    // Agregar la palabra Total a la izquierda de la suma
+    worksheet.getCell(`E${lastRow + 1}`).value = "Total : ";
+    // Aplicar formato a la columna de importes
+    worksheet.getColumn(6).numFmt = '"$"#,##0.00';
+   
     // Configurar el tipo de respuesta
     res.setHeader(
         "Content-Type",

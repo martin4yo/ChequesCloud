@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const handlebars = require("express-handlebars");
+const session = require("express-session");
 const path = require("path");
 var logger = require("morgan");
 
@@ -43,6 +44,16 @@ app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "./src/views"));
 
 app.use("/static", express.static(path.join(__dirname, "./src/public")));
+
+// PARA VALIDACION DE SESIONES
+// Configuración de sesiones
+app.use(
+  session({
+    secret: "secreto123",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 // CONFIGURACION DE RUTAS DE LA API y VISTAS
 const routes = require("./src/routes/index");

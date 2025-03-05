@@ -4,6 +4,7 @@ const bancos = require("./bancoRoute");
 const chequeras = require("./chequeraRoute");
 const cheques = require("./chequeRoute");
 const views = require("./viewsroute");
+const usuarios = require("./usuarioRoute");
 
 /* Home */
 // router.get("/", function (req, res, next) {
@@ -19,6 +20,8 @@ router.use("/api/chequeras", chequeras);
 // //Importa las rutas de chequeras
 router.use("/api/cheques", cheques);
 
+// //Importa las rutas de usuarios
+router.use("/api/usuarios", usuarios);
 
 //Importa las rutas de vistas
 router.use("/", views);
