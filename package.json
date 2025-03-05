@@ -13,6 +13,7 @@
   "dependencies": {
     "axios": "^1.8.1",
     "body-parser": "^1.20.3",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "express-handlebars": "^8.0.1",
     "express-routemap": "^1.6.0",

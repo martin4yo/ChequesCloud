@@ -141,3 +141,16 @@ td, th {
     padding-bottom: 0rem;
     line-height: 1.5;
 }
+
+#btnExportar {
+    background: transparent;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+}
+
+#btnExportar img {
+    width: 30px;
+    height: auto;
+    cursor: pointer; /* Hace que el cursor sea de tipo botón */
+}

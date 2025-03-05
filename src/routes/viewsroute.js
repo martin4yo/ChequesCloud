@@ -3,6 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require('axios');
+const { exportarCheques } = require("../controllers/chequeController");
 
 router.get("/bancos", async (req, res) => {
     try {
@@ -36,4 +37,10 @@ router.get("/bancos", async (req, res) => {
       res.render("error", { error : err.message })
     }
   });
+
+  router.get("/exportar", async(req, res) => {
+    exportarCheques(req, res);
+  });
+
+
 module.exports = router;

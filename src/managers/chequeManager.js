@@ -30,10 +30,10 @@ class ChequeManager {
 
   async obtenerCheques(query) {
 
+    const filtros = {};
+
     const { banco, fechaEmisionDesde, fechaEmisionHasta, fechaVencimientoDesde, fechaVencimientoHasta, conciliado, nombre, importeDesde, importeHasta } = query;
 
-    const filtros = {};
-  
     if (banco) filtros.banco = banco;
     if (nombre) {
         filtros.nombre = { [Op.like]: `%${nombre}%` };
@@ -49,27 +49,20 @@ class ChequeManager {
         };
     }
     if (fechaVencimientoDesde || fechaVencimientoHasta) {
-      filtros.vencimiento = {
-          [Op.between]: [fechaVencimientoDesde, fechaVencimientoHasta]
-      };
-  }
+        filtros.vencimiento = {
+            [Op.between]: [fechaVencimientoDesde, fechaVencimientoHasta]
+        };
+    }
     if (importeDesde || importeHasta) {
         filtros.importe = {
             [Op.between]: [importeDesde, importeHasta]
         };
     }
-  
+
     const cheques = await Cheque.findAll({
         where: filtros,
         include: [{ model: Banco, attributes: ["nombre"] }]
     });
-
-
-    // const cheque = await Cheque.findOne();
-    // console.log("Fecha cruda de Sequelize:", cheque.emision);
-    // console.log("Fecha con JSON:", cheque.toJSON().emision);
-    // console.log("Fecha convertida a string:", cheque.emision.toString());
-    // console.log("Fecha con toISOString:", cheque.emision.toISOString());
 
     // Ajustar la fecha al huso horario deseado
     return cheques.map(cheque => ({

@@ -8,17 +8,7 @@ const apiUrl = "http://localhost:8080/api/cheques";
     async function fetchCheques() {
         try {
 
-            const filtros = {
-                banco: document.getElementById("bancoFiltro").value,
-                fechaEmisionDesde: document.getElementById("emisiondesde").value || "1900-01-01",
-                fechaEmisionHasta: document.getElementById("emisionhasta").value || "2050-12-31",
-                fechaVencimientoDesde: document.getElementById("vencimientodesde").value || "1900-01-01",
-                fechaVencimientoHasta: document.getElementById("vencimientohasta").value || "2050-12-31",
-                conciliado: document.getElementById("conciliadoFiltro").value,
-                nombre : document.getElementById("nombreFiltro").value,
-                importeDesde: document.getElementById("importedesde").value || 0,
-                importeHasta: document.getElementById("importehasta").value || 999999999
-            };
+            const filtros = crearFiltro()
         
             const params = new URLSearchParams(filtros).toString();  
             const response = await fetch(`${apiUrl}?${params}`);
@@ -66,7 +56,7 @@ const apiUrl = "http://localhost:8080/api/cheques";
         document.getElementById("nextPage").parentElement.classList.toggle("disabled", end >= Cheques.length);
     }
 
-    document.getElementById("prevPage").addEventListener("click", function(event) {
+document.getElementById("prevPage").addEventListener("click", function(event) {
         event.preventDefault();
         if (currentPage > 1) {
             currentPage--;
@@ -83,6 +73,22 @@ const apiUrl = "http://localhost:8080/api/cheques";
     });
 
     fetchCheques();
+
+//* Crear Objeto Filtros
+
+function crearFiltro(){
+    return {
+        banco: document.getElementById("bancoFiltro").value,
+        fechaEmisionDesde: document.getElementById("emisiondesde").value || "1900-01-01",
+        fechaEmisionHasta: document.getElementById("emisionhasta").value || "2050-12-31",
+        fechaVencimientoDesde: document.getElementById("vencimientodesde").value || "1900-01-01",
+        fechaVencimientoHasta: document.getElementById("vencimientohasta").value || "2050-12-31",
+        conciliado: document.getElementById("conciliadoFiltro").value,
+        nombre : document.getElementById("nombreFiltro").value,
+        importeDesde: document.getElementById("importedesde").value || 0,
+        importeHasta: document.getElementById("importehasta").value || 999999999
+    };
+}
 
 //********************************************************************************
 // Cargar bancos 
@@ -137,6 +143,15 @@ document.getElementById("limpiafiltro").addEventListener("click", function(event
     document.getElementById("importedesde").value = null;
     document.getElementById("importehasta").value = null;
     fetchCheques();
+});
+
+//** Exporta a Excel */
+document.getElementById("btnExportar").addEventListener("click", function(event) {
+    event.preventDefault();
+    //** Pasar pasametros */
+    const filtros = crearFiltro();    
+    const params = new URLSearchParams(filtros).toString();  
+    window.location.href = `/exportar?${params}`; // Redirige para descargar el archivo
 });
 
 
