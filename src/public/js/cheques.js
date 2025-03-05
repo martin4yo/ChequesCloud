@@ -1,6 +1,7 @@
 // PAGINADO DE TABLA 
 
 const apiUrl = "http://localhost:8080/api/cheques";
+
     let Cheques = [];
     let currentPage = 1;
     const rowsPerPage = 10;
@@ -206,7 +207,7 @@ function deleteCheque(itemId, pTitle) {
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
     if (itemIdToDelete !== null) {
-          fetch(`http://localhost:8080/api/cheques/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
+          fetch(`${apiUrl}/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
@@ -235,9 +236,9 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
 
 //Enviar los datos para el ALTA del Cheque **************
 
-document.getElementById("chequeForm").addEventListener("submit", function(event) {
-  event.preventDefault(); 
-  event.stopPropagation();
+document.getElementById("chequeForm").addEventListener("submit", async function(event) {
+    event.preventDefault(); 
+    event.stopPropagation();
 
     let form = event.target;
     // let numDesde = document.getElementById("numdesde");
@@ -257,6 +258,14 @@ document.getElementById("chequeForm").addEventListener("submit", function(event)
         return response.json();
     }
 
+    const result = await validarNumero()
+  
+    if (!result.success) {
+        mostrarAlerta(result.message, "danger"); 
+        return result;
+    }
+
+    // Intento guardar el cheque 
     if (form.checkValidity()) {
         // Recupero los datos del formulario para enviar a la API con el POST
         const idCheque = document.getElementById("idCheque").value;
@@ -271,8 +280,6 @@ document.getElementById("chequeForm").addEventListener("submit", function(event)
             conciliado: document.getElementById("conciliado").checked,
             fechaconciliacion: document.getElementById("fechaconciliacion").value === "" ? "1900-01-01" : document.getElementById("fechaconciliacion").value
         };
-        // URL de la API
-        const apiUrl = "http://localhost:8080/api/cheques"; 
 
         // Configuración del POST
         if (idCheque) {
@@ -323,6 +330,17 @@ document.getElementById("chequeForm").addEventListener("submit", function(event)
     }
 
 });
+
+async function validarNumero(){
+    
+    // Validacion de Numero de Cheque
+    let chequeBanco = document.getElementById("bancoFiltro").value
+    let chequeNumero = document.getElementById("numero").value
+
+    const response = await fetch(`${apiUrl}/validarnumero?banco=${chequeBanco}&numero=${chequeNumero}`)
+    return response.json()
+
+}
 
 // Función para mostrar las alertas con bootstrap
 function mostrarAlerta(mensaje, tipo) {

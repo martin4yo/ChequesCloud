@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const axios = require('axios');
 const bcrypt = require("bcryptjs"); // Para encriptar contraseñas
+const chequeController = require("../controllers/chequeController");
 
 router.get("/bancos", async (req, res) => {
     if (!req.session.user) {
@@ -51,7 +52,7 @@ router.get("/bancos", async (req, res) => {
     if (!req.session.user) {
       return res.redirect("/");
     }
-    exportarCheques(req, res);
+    chequeController.exportarCheques(req, res);
   });
 
 // Página de login
@@ -72,12 +73,7 @@ router.post("/login", async (req, res) => {
       return res.render("login", { error: "Usuario/contraseña incorrecta" });
     }
 
-    // Validar contraseña
-    console.log("p1", password)
-    console.log("user", user)
-    console.log("url", `http://localhost:8080/api/usuarios/${username}`)
-    console.log("p2", user.password)
-    
+    // Validar contraseña   
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.render("login", { error: "Usuario/contraseña incorrecta" });

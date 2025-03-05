@@ -1,4 +1,4 @@
-const { Cheque, Banco } = require("../models");
+const { Cheque, Banco, Chequera } = require("../models");
 const { Op } = require("sequelize");
 const moment = require("moment-timezone");
 
@@ -91,6 +91,54 @@ class ChequeManager {
     } catch (error) {
         console.error("Error al eliminar el cheque:", error);
     }
+}
+
+async validarNumeroChequera(banco, numero) {
+
+    let result = {}
+
+    try {
+      
+      // Buscar el numero por si esta repetido
+      const cheque = await Cheque.findOne({
+        where: {
+          banco : banco,
+          numero: numero,                            
+        },
+      });
+  
+      if (cheque) {
+        console.log("El número ya se encuentra registrado en ese banco.");
+        result = {success : true, message : "El número ya se encuentra registrado en ese banco."} ; // El número pertenece a una chequera válida
+      } else {
+        console.log("El número no esta registrado.");
+        result =  {success : false, message : "El numero no esta registrado"}; // El número no pertenece a ninguna chequera válida
+      }
+
+     // Buscar una chequera que tenga el número dentro del rango y habilitada sea true
+     const chequera = await Chequera.findOne({
+      where: {
+        banco : banco,
+        numdesde: { [Op.lte]: numero }, // numerodesde <= numero
+        numhasta: { [Op.gte]: numero },  // numerohasta >= numero
+        habilitada: true,                             // habilitada debe ser true
+      },
+    });
+
+    if (chequera) {
+      console.log("El número pertenece a una chequera habilitada.");
+      result = {success : true, message : "El numero corresponde a una chequera habilitada"} ; // El número pertenece a una chequera válida
+    } else {
+      console.log("El número no pertenece a ninguna chequera habilitada.");
+      result =  {success : false, message : "El numero NO corresponde a una chequera habilitada"}; // El número no pertenece a ninguna chequera válida
+    }
+  } catch (error) {
+    console.error("Error al validar el número de chequera:", error);
+    throw error;
+  }
+  
+  return result;
+
 }
 
 }

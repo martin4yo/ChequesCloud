@@ -12,7 +12,7 @@ const sequelize = new Sequelize("ChequesCloud", "sa", "Q27G4B98", {
           return next();
       },
     },
-    logging: false,
+    logging: true,
   });
 
   module.exports = sequelize;

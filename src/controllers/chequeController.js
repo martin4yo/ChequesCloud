@@ -25,6 +25,19 @@ async function obtenerChequePorId(req, res) {
   res.json(Cheques);
 }
 
+async function validarNumeroChequera(req, res) {
+  const { banco, numero } = req.query
+  const result = await ChequeManager.validarNumeroChequera(banco, numero);
+
+  if (result.sucess){
+    res.status(200).json(result);
+  }
+  else {
+    res.status(200).json(result);
+  }
+
+}
+
 async function eliminarChequePorId(req, res) {
   const { id } = req.params
   const Cheques = await ChequeManager.eliminarChequePorId(id);
@@ -99,4 +112,5 @@ async function exportarCheques(req, res) {
 }
 };
 
-module.exports = { crearCheque, obtenerCheques, obtenerChequePorId, eliminarChequePorId, modificarCheque, exportarCheques};
+module.exports = {  crearCheque, obtenerCheques, obtenerChequePorId, eliminarChequePorId, 
+                    modificarCheque, exportarCheques, validarNumeroChequera};
