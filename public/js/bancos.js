@@ -1,4 +1,14 @@
+//Muestra la barra 
+//Esconde los items de la barra de navegacion
+document.addEventListener("DOMContentLoaded", () => {
 
+    document.getElementById('navbarNav').classList.remove('hidden');
+
+});
+
+
+
+//Sigue
     let bancos = [];
     let currentPage = 1;
     const rowsPerPage = 10;

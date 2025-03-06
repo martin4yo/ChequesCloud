@@ -6,7 +6,8 @@
     //********************************************************************************
     // Cargar bancos 
     document.addEventListener("DOMContentLoaded", async () => {
-
+        
+        document.getElementById('navbarNav').classList.remove('hidden');
         await cargarBancos();
 
     });

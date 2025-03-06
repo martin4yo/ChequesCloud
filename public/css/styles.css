@@ -53,6 +53,9 @@ body{
     background: transparent;
     text-align: start;
     font-size: 20px;
+    display: flex;
+    justify-content: space-between; /* Distribuye los elementos con espacio entre ellos */
+    align-items: center; /* Centra los elementos verticalmente */
 }
 
 .header.box-shd {
@@ -62,6 +65,8 @@ body{
 .navbar {
     border-radius: 6px !important;
     overflow: hidden; /* Evita esquinas blancas */
+    background: linear-gradient(to right, white, #007bff);
+    height: 70px;
 }
 
 /* Contenedor de la sección inferior */
@@ -152,4 +157,16 @@ td, th {
     width: 30px;
     height: auto;
     cursor: pointer; /* Hace que el cursor sea de tipo botón */
+}
+
+.hidden {
+    display: none;
+}
+
+.text-azul-oscuro {
+    color: #083a98;
+}
+
+.hover-text:hover {
+    color: #5590cb; /* Azul más claro */
 }
