@@ -5,11 +5,11 @@ const moment = require("moment-timezone");
 class ChequeManager {
   async crearCheque(banco, numero, emision, vencimiento, importe, nombre, conciliado, fechaconciliacion) {
 
-    //  emision = ajusteFecha(emision);
-    //  vencimiento = ajusteFecha(vencimiento);
-    //  if (conciliado){
-    //     fechaconciliacion = ajusteFecha(fechaconciliacion);
-    //  }
+    // emision = moment(emision).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD");
+    // vencimiento = moment(vencimiento).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD");
+    // if (conciliado){
+    //      fechaconciliacion = moment(fechaconciliacion).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD");
+    //   }
     
      console.log("emision", emision)
      return await Cheque.create({ banco, numero, emision, vencimiento, importe, nombre, conciliado, fechaconciliacion });
@@ -18,11 +18,18 @@ class ChequeManager {
   async modificarCheque(id, data) {
     try {
  
-      // data.emision = ajusteFecha(data.emision);
-      // data.vencimiento = ajusteFecha(data.vencimiento);
-      // if (data.conciliado){
-      //    data.fechaconciliacion = ajusteFecha(data.fechaconciliacion);
-      // }
+        //Verificar si el cheque existe
+        const filtros =  {  banco: data.banco, 
+                            numero: data.numero, 
+                            id : { [Op.ne]: id } 
+                          }
+
+        const cheque = await Cheque.findOne({
+                                          where: filtros
+                                                });        
+        if (cheque){
+          return {success:false, message: "Ese numero de cheque fue registrado"}
+        }
 
         const [filasActualizadas] = await Cheque.update(data, {
             where: { id: id }
@@ -30,14 +37,14 @@ class ChequeManager {
 
         if (filasActualizadas === 0) {
             console.log("No se encontró el cheque.");
-            return null;
+            return {success:false, message: "No se encontró el cheque."}
         }
 
         console.log("Cheque actualizado correctamente.");
-        return true;
+        return {success:true, message: "Cheque modificado correctamente"}
     } catch (error) {
         console.error("Error al actualizar el cheque:", error);
-        return false;
+        return {success:false, message: "Error al actualizar el cheque"}
     }
   }
 
@@ -78,25 +85,20 @@ class ChequeManager {
     });
 
     // Ajustar la fecha al huso horario deseado
-    return cheques.map(cheque => ({
-        ...cheque.toJSON(),
-        emision: moment(cheque.emision).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
-        vencimiento: moment(cheque.vencimiento).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
-    }));
+    // return cheques.map(cheque => ({
+    //     ...cheque.toJSON(),
+    //     emision: moment(cheque.emision).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
+    //     vencimiento: moment(cheque.vencimiento).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
+    // }));
+    return cheques;
 
   }
 
   async obtenerChequePorId(id) {
 
     const data = await Cheque.findByPk(id);
-
-    data.dataValues.emision = ajusteFecha(data.dataValues.emision);
-    data.dataValues.vencimiento = ajusteFecha(data.dataValues.vencimiento);
-    if (data.dataValues.conciliado){
-       data.dataValues.fechaconciliacion = ajusteFecha(data.dataValues.fechaconciliacion);
-    }
-
     return data
+
   }
 
   async eliminarChequePorId(id) {
@@ -128,9 +130,7 @@ async validarNumeroChequera(banco, numero) {
           numero: numero,                            
         },
       });
-
-console.log("Cheque", cheque) 
-      
+  
       if (cheque) {
         console.log("El número ya se encuentra registrado en ese banco.");
         result = {success : false, message : "El número ya se encuentra registrado en ese banco."} ; // El número pertenece a una chequera válida
@@ -171,8 +171,7 @@ console.log("Cheque", cheque)
 function ajusteFecha(fecha) {
   //fecha.setDate(fecha.getDate() + 1); // Suma un día
   let fechaLocal = new Date(fecha);
-  fechaLocal.setDate(fechaLocal.getDate() + 1);
-  return fechaLocal.toISOString().slice(0, 10); // Suma un día;
+  return fechaLocal.toISOString().slice(0, 10); 
 }
 
 module.exports = new ChequeManager();

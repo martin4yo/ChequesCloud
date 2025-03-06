@@ -1,0 +1,8 @@
+API_URL=http://localhost:8080
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=Axioma2024!
+DB_NAME=ChequesCloud
+DB_DIALECT=mysql
+DB_PORT=3306
+DB_LOGGING=true

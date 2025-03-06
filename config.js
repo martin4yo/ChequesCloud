@@ -24,14 +24,16 @@ const sequelize = new Sequelize(
     {
     host: config.db.host,
     dialect: config.db.dialect,
-    timezone: "-03:00",  // UTC-3 (Argentina, Brasil, Uruguay, etc.)
+    timezone: '+00:00', // Almacenar y recuperar en UTC sin conversión
     dialectOptions: {
-      typeCast: function (field, next) {
-          if (field.type === "DATETIME") {
-              return new Date(field.string());
-          }
-          return next();
-      },
+      useUTC: true,  // Asegura que se guarden en UTC
+      dateStrings: true, // Devuelve fechas como strings sin conversión a objeto Date
+      typeCast: function (field, next) { // Maneja las conversiones manualmente
+        if (field.type === "DATETIME") {
+          return field.string(); // Devuelve la fecha como string "YYYY-MM-DD HH:mm:ss"
+        }
+        return next();
+      }
     },
     logging: config.db.logging,
   });

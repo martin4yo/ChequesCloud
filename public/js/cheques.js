@@ -1,3 +1,4 @@
+
     let Cheques = [];
     let currentPage = 1;
     const rowsPerPage = 10;
@@ -204,15 +205,16 @@ async function editarCheque(id) {
     fetch(`${apiUrl}/api/cheques/${id}`)
         .then(response => response.json())
         .then(Cheque => {
+
             document.getElementById("idCheque").value = Cheque.id;
             document.getElementById("bancoFiltro").value = Cheque.banco;
             document.getElementById("numero").value = Cheque.numero;
-            document.getElementById("emision").value = Cheque.emision;
-            document.getElementById("vencimiento").value = Cheque.vencimiento;
+            document.getElementById("emision").value = new Date(Cheque.emision).toISOString().split("T")[0];
+            document.getElementById("vencimiento").value = new Date(Cheque.vencimiento).toISOString().split("T")[0];
             document.getElementById("nombre").value = Cheque.nombre;
             document.getElementById("importe").value = Cheque.importe;
             document.getElementById("conciliado").checked = Cheque.conciliado;
-            document.getElementById("fechaconciliacion").value = Cheque.conciliado ? Cheque.fechaconciliacion : null;
+            document.getElementById("fechaconciliacion").value = Cheque.conciliado ? new Date(Cheque.fechaconciliacion).toISOString().split("T")[0] : null;
             document.getElementById("numero").focus();
         })
         .catch(error => console.error("Error al obtener Cheque:", error));
@@ -258,8 +260,24 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
     fetchCheques();
 });
 
-//Enviar los datos para el ALTA del Cheque **************
 
+//Agrega evento de input para limpiar los errores posibles de las fechas
+document.getElementById("emision").addEventListener('input', function() {
+    document.getElementById("vencimiento").setCustomValidity('');  // Limpiar el error si el usuario corrige el dato
+  });
+
+//Agrega evento de input para limpiar los errores posibles de las fechas
+document.getElementById("vencimiento").addEventListener('input', function() {
+    document.getElementById("vencimiento").setCustomValidity('');  // Limpiar el error si el usuario corrige el dato
+    document.getElementById("fechaconciliacion").setCustomValidity('');  // Limpiar el error si el usuario corrige el dato
+  });
+
+document.getElementById("fechaconciliacion").addEventListener('input', function() {
+    document.getElementById("fechaconciliacion").setCustomValidity('');  // Limpiar el error si el usuario corrige el dato
+    document.getElementById("vencimiento").setCustomValidity('');  // Limpiar el error si el usuario corrige el dato
+  });
+  
+//Enviar los datos para el ALTA del Cheque **************
 document.getElementById("chequeForm").addEventListener("submit", async function(event) {
     event.preventDefault(); 
     event.stopPropagation();
@@ -269,16 +287,50 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
     // Validación de banco
     if (document.getElementById("bancoFiltro").value === ""){
         mostrarAlerta("Debe seleccionar un banco en los filtros", "danger");
-        return response.json();
+        return null;
     }
 
+    // Validacion del numero de cheque
     const result = await validarNumero()
-  
+
     if (!result.success) {
         mostrarAlerta(result.message, "danger"); 
         return result;
     }
 
+    // Validacion de FECHAS 
+    let emision = document.getElementById("emision");
+    let vencimiento = document.getElementById("vencimiento");
+    let fechaconciliacion = document.getElementById("fechaconciliacion");
+
+    let fechaE = moment.utc(emision.value);
+    let fechaV = moment.utc(vencimiento.value);
+    let fechaC = moment.utc(fechaconciliacion.value);
+
+    // Validar si "Fecha Hasta" es menor que "Fecha Desde"
+    vencimiento.setCustomValidity(''); // Borra el mensaje de error si es válido
+    if (fechaV < fechaE) {
+        vencimiento.setCustomValidity("La fecha de Vencimiento debe ser mayor a la de Emision.");
+    } 
+
+    // Validar si "Fecha Conciliacion" es menor que "Vencimiento"
+    fechaconciliacion.setCustomValidity(''); // Borra el mensaje de error si es válido
+    if (fechaC > fechaV) {
+        fechaconciliacion.setCustomValidity("La fecha de Conciliacion debe ser mayor a la de vencimiento.");
+    } 
+
+    if (!this.checkValidity()){
+        vencimiento.reportValidity();
+        if (document.getElementById("conciliado").checked){
+            fechaconciliacion.reportValidity();
+        }
+    }
+
+    // if (!this.checkValidity()) {
+    //     this.classList.add("was-validated"); // Acti
+    // }
+
+    // Obtiene la URL de la API 
     const apiUrl = await obtenerConfig()
 
     // Intento guardar el cheque 
@@ -294,7 +346,7 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
             importe: document.getElementById("importe").value,
             nombre: document.getElementById("nombre").value,
             conciliado: document.getElementById("conciliado").checked,
-            fechaconciliacion: document.getElementById("fechaconciliacion").value === "" ? "1900-01-01" : document.getElementById("fechaconciliacion").value
+            fechaconciliacion: document.getElementById("conciliado").checked ? document.getElementById("fechaconciliacion").value : null 
         };
         
 
@@ -313,10 +365,12 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
                     }
                     return response.json();
                 })
-                .then(() => {
-                    resetForm();
-                    fetchCheques();
-                    mostrarAlerta("Cheque modificado correctamente", "success"); 
+                .then(data => {
+                    mostrarAlerta(data.message, data.success ? "success" : "danger"); 
+                    if (data.success) {
+                        resetForm();
+                        fetchCheques();
+                    }
                 })
                 .catch(error => console.log("Error al actualizar Cheque:", error));
             } else {

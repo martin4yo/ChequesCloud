@@ -10,8 +10,20 @@ async function crearCheque(req, res) {
 async function modificarCheque(req, res) {
   const { id } = req.params;
   const datosCheque = JSON.parse(JSON.stringify(req.body));
-  const Cheque = await ChequeManager.modificarCheque(id, datosCheque)
-  res.json(datosCheque);
+  try {
+    const result = await ChequeManager.modificarCheque(id, datosCheque)
+    if (result.success){
+      res.json(result).status(200);
+    }
+    else {
+      res.json(result).status(400);
+    }
+
+  }
+  catch (error) {
+    res.json(error).status(400);
+  }
+
 }
 
 async function obtenerCheques(req, res) {

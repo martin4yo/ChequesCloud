@@ -1,4 +1,4 @@
-  // Función para mostrar las alertas con bootstrap
+// Función para mostrar las alertas con bootstrap
 function mostrarAlerta(mensaje, tipo) {
     const toastContainer = document.getElementById("toastContainer");
 
@@ -32,13 +32,9 @@ function mostrarAlerta(mensaje, tipo) {
 function formatearFecha(fecha) {
     //fecha.setDate(fecha.getDate() + 1); // Suma un día
     let fechaLocal = new Date(fecha);
-    fechaLocal.setDate(fechaLocal.getDate() + 1); // Suma un día
-    fechaLocal.setMinutes(fechaLocal.getMinutes() + fechaLocal.getTimezoneOffset()); // Ajustar UTC a local
-    return fechaLocal.toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    });
+    //fechaLocal.setDate(fechaLocal.getDate() + 1); // Suma un día
+    //fechaLocal.setMinutes(fechaLocal.getMinutes() + fechaLocal.getTimezoneOffset()); // Ajustar UTC a local
+    return moment(fechaLocal.toISOString().split("T")[0]).format("DD/MM/YYYY").split("-").reverse().join("/");
 }
 
 // Función para formatear importe con separadores de miles y 2 decimales
