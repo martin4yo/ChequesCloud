@@ -4,12 +4,13 @@ const moment = require("moment-timezone");
 
 class ChequeManager {
   async crearCheque(banco, numero, emision, vencimiento, importe, nombre, conciliado, fechaconciliacion) {
+
+    //  emision = ajusteFecha(emision);
+    //  vencimiento = ajusteFecha(vencimiento);
+    //  if (conciliado){
+    //     fechaconciliacion = ajusteFecha(fechaconciliacion);
+    //  }
     
-     emision = ajusteFecha(emision);
-     vencimiento = ajusteFecha(vencimiento);
-     if (conciliado){
-        fechaconciliacion = ajusteFecha(fechaconciliacion);
-     }
      console.log("emision", emision)
      return await Cheque.create({ banco, numero, emision, vencimiento, importe, nombre, conciliado, fechaconciliacion });
   }
@@ -17,11 +18,11 @@ class ChequeManager {
   async modificarCheque(id, data) {
     try {
  
-      data.emision = ajusteFecha(data.emision);
-      data.vencimiento = ajusteFecha(data.vencimiento);
-      if (data.conciliado){
-         data.fechaconciliacion = ajusteFecha(data.fechaconciliacion);
-      }
+      // data.emision = ajusteFecha(data.emision);
+      // data.vencimiento = ajusteFecha(data.vencimiento);
+      // if (data.conciliado){
+      //    data.fechaconciliacion = ajusteFecha(data.fechaconciliacion);
+      // }
 
         const [filasActualizadas] = await Cheque.update(data, {
             where: { id: id }
@@ -127,13 +128,15 @@ async validarNumeroChequera(banco, numero) {
           numero: numero,                            
         },
       });
-  
+
+console.log("Cheque", cheque) 
+      
       if (cheque) {
         console.log("El número ya se encuentra registrado en ese banco.");
-        result = {success : true, message : "El número ya se encuentra registrado en ese banco."} ; // El número pertenece a una chequera válida
+        result = {success : false, message : "El número ya se encuentra registrado en ese banco."} ; // El número pertenece a una chequera válida
       } else {
         console.log("El número no esta registrado.");
-        result =  {success : false, message : "El numero no esta registrado"}; // El número no pertenece a ninguna chequera válida
+        result =  {success : true, message : "El numero no esta registrado"}; // El número no pertenece a ninguna chequera válida
       }
 
      // Buscar una chequera que tenga el número dentro del rango y habilitada sea true

@@ -13,12 +13,12 @@ const Cheque = sequelize.define("Cheque", {
         allowNull: false,
       },
     numero: { type: DataTypes.STRING(50) },
-    emision: { type: DataTypes.DATE },
-    vencimiento : { type: DataTypes.DATE},
+    emision: { type: DataTypes.DATEONLY },
+    vencimiento : { type: DataTypes.DATEONLY},
     importe : { type: DataTypes.DOUBLE },
     nombre :{ type: DataTypes.STRING(250) },
     conciliado : { type: DataTypes.BOOLEAN },
-    fechaconciliacion : { type: DataTypes.DATE },
+    fechaconciliacion : { type: DataTypes.DATEONLY },
 });
 
 Cheque.belongsTo(Banco, { foreignKey: "banco" }); // Una chequera pertenece a un banco
