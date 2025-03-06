@@ -12,9 +12,6 @@
         try {
 
             const apiUrl = await obtenerConfig()
-
-            await cargarBancos();
-
             const filtros = crearFiltro()
             
             const params = new URLSearchParams(filtros).toString();  

@@ -15,9 +15,6 @@
         try {
 
             const apiUrl = await obtenerConfig()
-
-            await cargarBancos();
-
             const response = await fetch(`${apiUrl}/api/chequeras`);
             if (!response.ok) throw new Error("Error al recuperar los datos.");
             Chequeras = await response.json();

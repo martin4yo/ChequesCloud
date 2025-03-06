@@ -4,13 +4,25 @@ const moment = require("moment-timezone");
 
 class ChequeManager {
   async crearCheque(banco, numero, emision, vencimiento, importe, nombre, conciliado, fechaconciliacion) {
-
+    
+     emision = ajusteFecha(emision);
+     vencimiento = ajusteFecha(vencimiento);
+     if (conciliado){
+        fechaconciliacion = ajusteFecha(fechaconciliacion);
+     }
+     console.log("emision", emision)
      return await Cheque.create({ banco, numero, emision, vencimiento, importe, nombre, conciliado, fechaconciliacion });
   }
 
   async modificarCheque(id, data) {
     try {
-          
+ 
+      data.emision = ajusteFecha(data.emision);
+      data.vencimiento = ajusteFecha(data.vencimiento);
+      if (data.conciliado){
+         data.fechaconciliacion = ajusteFecha(data.fechaconciliacion);
+      }
+
         const [filasActualizadas] = await Cheque.update(data, {
             where: { id: id }
         });
@@ -74,7 +86,16 @@ class ChequeManager {
   }
 
   async obtenerChequePorId(id) {
-    return await Cheque.findByPk(id);
+
+    const data = await Cheque.findByPk(id);
+
+    data.dataValues.emision = ajusteFecha(data.dataValues.emision);
+    data.dataValues.vencimiento = ajusteFecha(data.dataValues.vencimiento);
+    if (data.dataValues.conciliado){
+       data.dataValues.fechaconciliacion = ajusteFecha(data.dataValues.fechaconciliacion);
+    }
+
+    return data
   }
 
   async eliminarChequePorId(id) {
@@ -141,6 +162,14 @@ async validarNumeroChequera(banco, numero) {
 
 }
 
+}
+
+// Función para formatear fecha a dd/MM/yyyy
+function ajusteFecha(fecha) {
+  //fecha.setDate(fecha.getDate() + 1); // Suma un día
+  let fechaLocal = new Date(fecha);
+  fechaLocal.setDate(fechaLocal.getDate() + 1);
+  return fechaLocal.toISOString().slice(0, 10); // Suma un día;
 }
 
 module.exports = new ChequeManager();
