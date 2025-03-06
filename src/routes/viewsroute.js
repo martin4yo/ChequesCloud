@@ -5,6 +5,7 @@ const router = express.Router();
 const axios = require('axios');
 const bcrypt = require("bcryptjs"); // Para encriptar contraseñas
 const chequeController = require("../controllers/chequeController");
+const { config } = require("../../config")
 
 router.get("/bancos", async (req, res) => {
     if (!req.session.user) {
@@ -54,6 +55,14 @@ router.get("/bancos", async (req, res) => {
     }
     chequeController.exportarCheques(req, res);
   });
+
+// Endpoint para obtener configuración desde el cliente
+router.get("/api/config", (req, res) => {
+  // if (!req.session.user) {
+  //   return res.redirect("/");
+  // }
+  res.json({ apiUrl: config.api.baseUrl });
+});
 
 // Página de login
 router.get("/", (req, res) => {

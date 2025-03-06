@@ -1,18 +1,25 @@
-// PAGINADO DE TABLA 
-
-const apiUrl = "http://localhost:8080/api/cheques";
+import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "./utils.js";
 
     let Cheques = [];
     let currentPage = 1;
     const rowsPerPage = 10;
+    const apiUrl = await obtenerConfig()
+
+    //********************************************************************************
+    // Cargar bancos 
+    document.addEventListener("DOMContentLoaded", async () => {
+         await cargarBancos();
+    });
 
     async function fetchCheques() {
         try {
 
+            await cargarBancos();
+
             const filtros = crearFiltro()
-        
+            
             const params = new URLSearchParams(filtros).toString();  
-            const response = await fetch(`${apiUrl}?${params}`);
+            const response = await fetch(`${apiUrl}/api/cheques?${params}`);
 
             if (!response.ok) throw new Error("Error al recuperar los datos.");
             Cheques = await response.json();
@@ -24,6 +31,7 @@ const apiUrl = "http://localhost:8080/api/cheques";
     }
 
     function renderTable() {
+
         const start = (currentPage - 1) * rowsPerPage;
         const end = start + rowsPerPage;
         const ChequesPaginados = Cheques.slice(start, end);
@@ -41,16 +49,36 @@ const apiUrl = "http://localhost:8080/api/cheques";
                 </td>
                 <td>
                     <div class="td-container">
-                            <button class="btn btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Cheque" onclick="editarCheque(${Cheque.id})">
+                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Cheque" data-id="${Cheque.id}">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Cheque" onclick="deleteCheque(${Cheque.id}, '${Cheque.numero}')">
+                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Cheque" data-id="${Cheque.id}" data-numero="${Cheque.numero}">
                                     <i class="fa-solid fa-trash"></i>
                             </button>
                     </div>
                 </td>
             </tr>
         `).join("");
+
+        // Agregar eventos después de insertar el HTML
+        document.querySelectorAll(".btn-warning").forEach((boton) => {
+            boton.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = this.getAttribute("data-id");
+                editarCheque(id);
+            });
+        });
+
+        document.querySelectorAll(".btn-danger").forEach((boton) => {
+            boton.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = this.getAttribute("data-id");
+                const numero = this.getAttribute("data-numero");
+                deleteCheque(id, numero);
+            });
+        });
 
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
@@ -91,16 +119,12 @@ function crearFiltro(){
     };
 }
 
-//********************************************************************************
-// Cargar bancos 
-document.addEventListener("DOMContentLoaded", async () => {
-    await cargarBancos();
-});
 
 // Función para cargar la lista de bancos desde la API
 async function cargarBancos() {
     try {
-        const response = await fetch("http://localhost:8080/api/bancos");
+
+        const response = await fetch(`${apiUrl}/api/bancos`);
         const bancos = await response.json();
         
         const bancoFiltro = document.getElementById("bancoFiltro");
@@ -174,8 +198,14 @@ document.getElementById("btnNuevo").addEventListener("click", function() {
     document.getElementById("numero").focus();
 });
 
-function editarCheque(id) {
-    fetch(`${apiUrl}/${id}`)
+// Confirmacion de Delete de BOOTSTRAP 
+
+let itemIdToDelete = null;
+let pTitleToDelete = null;
+
+async function editarCheque(id) {
+
+    fetch(`${apiUrl}/api/cheques/${id}`)
         .then(response => response.json())
         .then(Cheque => {
             document.getElementById("idCheque").value = Cheque.id;
@@ -192,11 +222,6 @@ function editarCheque(id) {
         .catch(error => console.error("Error al obtener Cheque:", error));
 }
 
-// Confirmacion de Delete de BOOTSTRAP 
-
-let itemIdToDelete = null;
-let pTitleToDelete = null;
-
 function deleteCheque(itemId, pTitle) {
     itemIdToDelete = itemId;
     pTitleToDelete = document.getElementById('pTitleToDelete');
@@ -205,9 +230,11 @@ function deleteCheque(itemId, pTitle) {
     deleteModal.show();
 }
 
-document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+
+    
     if (itemIdToDelete !== null) {
-          fetch(`${apiUrl}/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
+          fetch(`${apiUrl}/api/cheques/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
@@ -280,11 +307,13 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
             conciliado: document.getElementById("conciliado").checked,
             fechaconciliacion: document.getElementById("fechaconciliacion").value === "" ? "1900-01-01" : document.getElementById("fechaconciliacion").value
         };
+        
 
         // Configuración del POST
         if (idCheque) {
                 // Editar Cheque existente
-                fetch(`${apiUrl}/${idCheque}`, {
+                
+                fetch(`${apiUrl}/api/cheques/${idCheque}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(ChequeData)
@@ -302,7 +331,7 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
                 })
                 .catch(error => console.log("Error al actualizar Cheque:", error));
             } else {
-            fetch(apiUrl, {
+            fetch(`${apiUrl}/api/cheques`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -332,64 +361,16 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
 });
 
 async function validarNumero(){
-    
+
     // Validacion de Numero de Cheque
     let chequeBanco = document.getElementById("bancoFiltro").value
     let chequeNumero = document.getElementById("numero").value
 
-    const response = await fetch(`${apiUrl}/validarnumero?banco=${chequeBanco}&numero=${chequeNumero}`)
+    const response = await fetch(`${apiUrl}/api/cheques/validarnumero?banco=${chequeBanco}&numero=${chequeNumero}`)
     return response.json()
 
 }
 
-// Función para mostrar las alertas con bootstrap
-function mostrarAlerta(mensaje, tipo) {
-    const toastContainer = document.getElementById("toastContainer");
 
-    // Crear el toast
-    const toast = document.createElement("div");
-    toast.className = `toast align-items-center text-bg-${tipo} border-0 show p-4`; 
-    toast.role = "alert";
-    toast.ariaLive = "assertive";
-    toast.ariaAtomic = "true";
-    toast.style.fontSize = "1.5rem"; // Aumenta el tamaño de la fuente
-    toast.style.width = "550px"; // Aumenta el ancho
 
-    // Contenido del toast
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body text-center">${mensaje}</div>
-            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-
-    // Agregar al contenedor
-    toastContainer.appendChild(toast);
-
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-
- // Función para formatear fecha a dd/MM/yyyy
- function formatearFecha(fecha) {
-    //fecha.setDate(fecha.getDate() + 1); // Suma un día
-    let fechaLocal = new Date(fecha);
-    fechaLocal.setDate(fechaLocal.getDate() + 1); // Suma un día
-    fechaLocal.setMinutes(fechaLocal.getMinutes() + fechaLocal.getTimezoneOffset()); // Ajustar UTC a local
-    return fechaLocal.toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    });
-}
-
-// Función para formatear importe con separadores de miles y 2 decimales
-function formatearImporte(importe) {
-    return new Intl.NumberFormat("es-ES", {
-        style: "decimal",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(importe);
-}
+ 

@@ -1,13 +1,23 @@
-// PAGINADO DE TABLA 
+import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "./utils.js";
 
-const apiUrl = "http://localhost:8080/api/chequeras";
+    const apiUrl = await obtenerConfig()
+
     let Chequeras = [];
     let currentPage = 1;
     const rowsPerPage = 10;
 
+    //********************************************************************************
+    // Cargar bancos 
+    document.addEventListener("DOMContentLoaded", async () => {
+        await cargarBancos();
+    });
+
     async function fetchChequeras() {
         try {
-            const response = await fetch(apiUrl);
+
+            await cargarBancos();
+
+            const response = await fetch(`${apiUrl}/api/chequeras`);
             if (!response.ok) throw new Error("Error al recuperar los datos.");
             Chequeras = await response.json();
             renderTable();
@@ -35,16 +45,36 @@ const apiUrl = "http://localhost:8080/api/chequeras";
                 </td>
                 <td>
                     <div class="d-flex gap-2">
-                            <button class="btn btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Chequera" onclick="editarChequera(${Chequera.id})">
+                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Chequera" data-id="${Chequera.id}">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Chequera" onclick="deleteChequera(${Chequera.id}, '${Chequera.Banco.nombre}')">
+                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Chequera" data-id="${Chequera.id}" data-nombre="'${Chequera.Banco.nombre}'">
                                     <i class="fa-solid fa-trash"></i>
                             </button>
                     </div>
                 </td>
             </tr>
         `).join("");
+
+         // Agregar eventos después de insertar el HTML
+         document.querySelectorAll(".btn-warning").forEach((boton) => {
+            boton.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = this.getAttribute("data-id");
+                editarChequera(id);
+            });
+        });
+
+        document.querySelectorAll(".btn-danger").forEach((boton) => {
+            boton.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = this.getAttribute("data-id");
+                const nombre = this.getAttribute("data-nombre");
+                deleteChequera(id, nombre);
+            });
+        });
 
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
@@ -69,16 +99,11 @@ const apiUrl = "http://localhost:8080/api/chequeras";
 
     fetchChequeras();
 
-//********************************************************************************
-// Cargar bancos 
-document.addEventListener("DOMContentLoaded", async () => {
-    await cargarBancos();
-});
 
 // Función para cargar la lista de bancos desde la API
 async function cargarBancos() {
     try {
-        const response = await fetch("http://localhost:8080/api/bancos");
+        const response = await fetch(`${apiUrl}/api/bancos`);
         const bancos = await response.json();
         const bancoSelect = document.getElementById("banco");
 
@@ -93,11 +118,6 @@ async function cargarBancos() {
     }
 }
 
-
-// document.getElementById("ChequeraForm").addEventListener("submit", function(event) {
-//     event.preventDefault();
-//     alert("Chequera guardado correctamente");
-// });
 
 function resetForm(){
     document.getElementById("idChequera").value = "";
@@ -114,7 +134,7 @@ document.getElementById("btnNuevo").addEventListener("click", function() {
 });
 
 function editarChequera(id) {
-    fetch(`${apiUrl}/${id}`)
+    fetch(`${apiUrl}/api/chequeras/${id}`)
         .then(response => response.json())
         .then(Chequera => {
             document.getElementById("idChequera").value = Chequera.id;
@@ -143,7 +163,7 @@ function deleteChequera(itemId, pTitle) {
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
     if (itemIdToDelete !== null) {
-          fetch(`http://localhost:8080/api/Chequeras/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
+          fetch(`${apiUrl}/api/chequeras/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
@@ -173,21 +193,11 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
 //Enviar los datos para el ALTA del Chequera **************
 
 document.getElementById("chequeraForm").addEventListener("submit", function(event) {
-  event.preventDefault(); 
-  event.stopPropagation();
+    event.preventDefault(); 
+    event.stopPropagation();
 
     let form = event.target;
-    // let numDesde = document.getElementById("numdesde");
-    // let numHasta = document.getElementById("numhasta");
-
-    // // Validación personalizada: numdesde < numhasta
-    // if (parseInt(numDesde.value) >= parseInt(numHasta.value)) {
-    //     numHasta.classList.add("is-invalid");
-    //     numHasta.nextElementSibling.textContent = "Debe ser mayor que 'Número Desde'.";
-    // } else {
-    //     numHasta.classList.remove("is-invalid");
-    // }
-
+    
     // Validación general de Bootstrap
     if (form.checkValidity()) {
         // Recupero los datos del formulario para enviar a la API con el POST
@@ -201,12 +211,11 @@ document.getElementById("chequeraForm").addEventListener("submit", function(even
             habilitada: document.getElementById("habilitada").checked
         };
         // URL de la API
-        const apiUrl = "http://localhost:8080/api/Chequeras"; 
 
         // Configuración del POST
         if (idChequera) {
                 // Editar Chequera existente
-                fetch(`${apiUrl}/${idChequera}`, {
+                fetch(`${apiUrl}/api/chequeras/${idChequera}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(ChequeraData)
@@ -224,7 +233,7 @@ document.getElementById("chequeraForm").addEventListener("submit", function(even
                 })
                 .catch(error => console.log("Error al actualizar Chequera:", error));
             } else {
-            fetch(apiUrl, {
+            fetch(`${apiUrl}/api/chequeras`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -253,33 +262,4 @@ document.getElementById("chequeraForm").addEventListener("submit", function(even
 
 });
 
-// Función para mostrar las alertas con bootstrap
-function mostrarAlerta(mensaje, tipo) {
-    const toastContainer = document.getElementById("toastContainer");
-
-    // Crear el toast
-    const toast = document.createElement("div");
-    toast.className = `toast align-items-center text-bg-${tipo} border-0 show p-4`; 
-    toast.role = "alert";
-    toast.ariaLive = "assertive";
-    toast.ariaAtomic = "true";
-    toast.style.fontSize = "1.5rem"; // Aumenta el tamaño de la fuente
-    toast.style.width = "550px"; // Aumenta el ancho
-
-    // Contenido del toast
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body text-center">${mensaje}</div>
-            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-
-    // Agregar al contenedor
-    toastContainer.appendChild(toast);
-
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
 

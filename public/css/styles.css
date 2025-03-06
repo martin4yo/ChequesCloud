@@ -60,7 +60,7 @@ body{
 
 .navbar {
     border-radius: 6px !important;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 5px 5px 10px gray;
     overflow: hidden; /* Evita esquinas blancas */
 }
 
@@ -84,7 +84,7 @@ body{
 
 .card {
     border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 5px 5px 10px gray;
     margin-top: 0px; /* Alineación arriba dentro del contenedor */
 }
 .form-control:focus {

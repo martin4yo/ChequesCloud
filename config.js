@@ -13,10 +13,12 @@ const config = {
     host: process.env.DB_HOST,
     dialect: process.env.DB_DIALECT || "mssql", // Cambia según el motor: mysql, postgres, etc.
     port: process.env.DB_PORT || 1433,
+    logging : process.env.DB_LOGGING === "true" || false,
   },
 };
 
-const sequelize = new Sequelize("ChequesCloud", 
+const sequelize = new Sequelize(
+    config.db.name, 
     config.db.user, 
     config.db.password, 
     {
@@ -31,7 +33,7 @@ const sequelize = new Sequelize("ChequesCloud",
           return next();
       },
     },
-    logging: true,
+    logging: config.db.logging,
   });
 
   module.exports = { sequelize, config };

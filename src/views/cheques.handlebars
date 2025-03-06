@@ -1,7 +1,7 @@
 <div class="bottom-section"> 
     <div class="left-panel">
         
-       <div class="card mt-2">
+       <div class="card mt-2 box-shd">
             <div class="card-header bg-primary text-white text-center fs-5 fw-bold">
                 <span id="tituloCheques">
                     Cheques
@@ -45,7 +45,7 @@
 
          <!-- Filtro -->
          <div class="d-flex justify-content-end mt-2">
-            <div class="card" style="width: 550px;">
+            <div class="card box-shd" style="width: 550px;">
                 <div class="card-header bg-primary text-white fs-5 fw-bold">
                      <button class="btn btn-primary collapsed fs-5 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#filtroCollapse">
                         Filtros <i class="fas fa-chevron-down rotate-icon"></i>
@@ -112,10 +112,10 @@
                                 </div>
                                 <!-- Botón Aplicar Filtro -->
                                 <div class="container d-flex justify-content-end mt-3">
-                                    <button type="button" id="aplicafiltro" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Aplicar Filtro">
+                                    <button type="button" id="aplicafiltro" class="btn btn-success box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Aplicar Filtro">
                                         <i class="fas fa-filter"></i>
                                     </button>
-                                     <button type="button" id="limpiafiltro" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Limpiar Filtro" style="margin-left: 15px;">
+                                     <button type="button" id="limpiafiltro" class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Limpiar Filtro" style="margin-left: 15px;">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -182,10 +182,10 @@
                         </div>                   
                         <!-- Botones -->
                         <div class="d-flex justify-content-end">
-                            <button type="button" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Nuevo Cheque" id="btnNuevo">
+                            <button type="button" class="btn btn-success box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Nuevo Cheque" id="btnNuevo">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
-                            <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Guardar Cheque" style="margin-left: 15px;">
+                            <button type="submit" class="btn btn-primary box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Guardar Cheque" style="margin-left: 15px;">
                                 <i class="fa-solid fa-floppy-disk"></i>
                             </button>
                         </div>
@@ -218,4 +218,4 @@
 
 <div id="toastContainer" class="position-fixed top-50 start-50 translate-middle p-3" style="z-index: 1050;"></div>
 
-<script src="static/js/cheques.js"></script>
+<script type="module" src="static/js/cheques.js" defer></script>

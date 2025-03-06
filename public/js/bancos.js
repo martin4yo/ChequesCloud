@@ -1,13 +1,14 @@
-// PAGINADO DE TABLA 
+import { obtenerConfig, mostrarAlerta } from "./utils.js";
 
-const apiUrl = "http://localhost:8080/api/bancos";
     let bancos = [];
     let currentPage = 1;
     const rowsPerPage = 10;
 
+    const apiUrl = await obtenerConfig()
+    
     async function fetchBancos() {
         try {
-            const response = await fetch(apiUrl);
+            const response = await fetch(`${apiUrl}/api/bancos`);
             if (!response.ok) throw new Error("Error al recuperar los datos.");
             bancos = await response.json();
             renderTable();
@@ -29,16 +30,38 @@ const apiUrl = "http://localhost:8080/api/bancos";
                 <td class="w-100">${banco.nombre}</td>
                 <td>
                     <div class="d-flex gap-2">
-                            <button class="btn btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Banco" onclick="editarBanco(${banco.id})">
+                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Banco" data-id="${banco.id}">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Banco" onclick="deleteBanco(${banco.id}, '${banco.nombre}')">
+                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Banco" data-id="${banco.id}" data-nombre="'${banco.nombre}'">
                                     <i class="fa-solid fa-trash"></i>
                             </button>
                     </div>
                 </td>
             </tr>
         `).join("");
+
+         // Agregar eventos después de insertar el HTML
+         document.querySelectorAll(".btn-warning").forEach((boton) => {
+            boton.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = this.getAttribute("data-id");
+                editarBanco(id);
+            }, { once: true });
+        });
+
+        document.querySelectorAll(".btn-danger").forEach((boton) => {
+            boton.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = this.getAttribute("data-id");
+                const nombre = this.getAttribute("data-nombre");
+                if (id !== null) {
+                    deleteBanco(id, nombre);
+                }
+            }, { once: true });
+        });
 
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
@@ -70,14 +93,17 @@ const apiUrl = "http://localhost:8080/api/bancos";
 //     alert("Banco guardado correctamente");
 // });
 
+
+
 document.getElementById("btnNuevo").addEventListener("click", function() {
     document.getElementById("codigoBanco").value = "";
     document.getElementById("nombreBanco").value = "";
     document.getElementById("codigoBanco").focus();
 });
 
-function editarBanco(id) {
-    fetch(`${apiUrl}/${id}`)
+async function editarBanco(id) {
+
+    fetch(`${apiUrl}/api/bancos/${id}`)
         .then(response => response.json())
         .then(banco => {
             document.getElementById("idBanco").value = banco.id;
@@ -101,9 +127,10 @@ function deleteBanco(itemId, pTitle) {
     deleteModal.show();
 }
 
-document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+
     if (itemIdToDelete !== null) {
-          fetch(`http://localhost:8080/api/bancos/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
+          fetch(`${apiUrl}/api/bancos/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
@@ -117,6 +144,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
         })
         .then(data => {
             // El producto pudo ser eliminado
+            console.log(data)
             mostrarAlerta("Banco eliminado correctamente", "success"); 
         })
         .catch(error => {
@@ -132,23 +160,21 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
 
 //Enviar los datos para el ALTA del banco **************
 
-document.getElementById("bancoForm").addEventListener("submit", function(event) {
+document.getElementById("bancoForm").addEventListener("submit", async function(event) {
   event.preventDefault(); 
 
   // Recupero los datos del formulario para enviar a la API con el POST
+
   const idBanco = document.getElementById("idBanco").value;
   const bancoData = {
       codigo: document.getElementById("codigoBanco").value,
       nombre: document.getElementById("nombreBanco").value
   };
 
-  // URL de la API
-  const apiUrl = "http://localhost:8080/api/bancos"; 
-
   // Configuración del POST
   if (idBanco) {
         // Editar banco existente
-        fetch(`${apiUrl}/${idBanco}`, {
+        fetch(`${apiUrl}/api/bancos/${idBanco}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(bancoData)
@@ -188,32 +214,3 @@ document.getElementById("bancoForm").addEventListener("submit", function(event) 
 
 });
 
-// Función para mostrar las alertas con bootstrap
-function mostrarAlerta(mensaje, tipo) {
-    const toastContainer = document.getElementById("toastContainer");
-
-    // Crear el toast
-    const toast = document.createElement("div");
-    toast.className = `toast align-items-center text-bg-${tipo} border-0 show p-4`; 
-    toast.role = "alert";
-    toast.ariaLive = "assertive";
-    toast.ariaAtomic = "true";
-    toast.style.fontSize = "1.5rem"; // Aumenta el tamaño de la fuente
-    toast.style.width = "500px"; // Aumenta el ancho
-
-    // Contenido del toast
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body text-center">${mensaje}</div>
-            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-
-    // Agregar al contenedor
-    toastContainer.appendChild(toast);
-
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
