@@ -46,6 +46,7 @@ class BancoManager {
         }
     } catch (error) {
         console.error("Error al eliminar el banco:", error);
+        throw new Error("Error al eliminar el banco");
     }
 }
 

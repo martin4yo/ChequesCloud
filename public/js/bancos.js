@@ -1,13 +1,13 @@
-import { obtenerConfig, mostrarAlerta } from "./utils.js";
 
     let bancos = [];
     let currentPage = 1;
     const rowsPerPage = 10;
 
-    const apiUrl = await obtenerConfig()
-    
     async function fetchBancos() {
         try {
+
+            const apiUrl = await obtenerConfig()
+    
             const response = await fetch(`${apiUrl}/api/bancos`);
             if (!response.ok) throw new Error("Error al recuperar los datos.");
             bancos = await response.json();
@@ -30,38 +30,16 @@ import { obtenerConfig, mostrarAlerta } from "./utils.js";
                 <td class="w-100">${banco.nombre}</td>
                 <td>
                     <div class="d-flex gap-2">
-                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Banco" data-id="${banco.id}">
+                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Banco" onclick="editarBanco(${banco.id})">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Banco" data-id="${banco.id}" data-nombre="'${banco.nombre}'">
+                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Banco" onclick="deleteBanco(${banco.id}, '${banco.nombre}')">
                                     <i class="fa-solid fa-trash"></i>
                             </button>
                     </div>
                 </td>
             </tr>
         `).join("");
-
-         // Agregar eventos después de insertar el HTML
-         document.querySelectorAll(".btn-warning").forEach((boton) => {
-            boton.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const id = this.getAttribute("data-id");
-                editarBanco(id);
-            }, { once: true });
-        });
-
-        document.querySelectorAll(".btn-danger").forEach((boton) => {
-            boton.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const id = this.getAttribute("data-id");
-                const nombre = this.getAttribute("data-nombre");
-                if (id !== null) {
-                    deleteBanco(id, nombre);
-                }
-            }, { once: true });
-        });
 
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
@@ -103,6 +81,8 @@ document.getElementById("btnNuevo").addEventListener("click", function() {
 
 async function editarBanco(id) {
 
+    const apiUrl = await obtenerConfig()
+    
     fetch(`${apiUrl}/api/bancos/${id}`)
         .then(response => response.json())
         .then(banco => {
@@ -129,6 +109,8 @@ function deleteBanco(itemId, pTitle) {
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
 
+    const apiUrl = await obtenerConfig()
+    
     if (itemIdToDelete !== null) {
           fetch(`${apiUrl}/api/bancos/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
             method: "DELETE",
@@ -138,14 +120,20 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
         })
         .then(response => {
             if (!response.ok) {         //Verifico si la respuesta no fue satisfactoria
-                throw new Error("Error al eliminar el producto");
+                mostrarAlerta("El banco no pudo ser eliminado", "danger"); 
+                throw new Error("Error al eliminar el banco");
             }
             return response.json(); 
         })
         .then(data => {
             // El producto pudo ser eliminado
-            console.log(data)
-            mostrarAlerta("Banco eliminado correctamente", "success"); 
+            if (data.success) {
+                mostrarAlerta("Banco eliminado correctamente", "success"); 
+            } else
+            {
+                mostrarAlerta("El banco no pudo ser eliminado", "danger"); 
+            }
+
         })
         .catch(error => {
             // Hubo algun error en el proceso
@@ -155,7 +143,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
     }
     const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
     deleteModal.hide();
-    fetchBancos();
+    await fetchBancos();
 });
 
 //Enviar los datos para el ALTA del banco **************
@@ -171,6 +159,8 @@ document.getElementById("bancoForm").addEventListener("submit", async function(e
       nombre: document.getElementById("nombreBanco").value
   };
 
+  const apiUrl = await obtenerConfig()
+    
   // Configuración del POST
   if (idBanco) {
         // Editar banco existente
@@ -187,7 +177,7 @@ document.getElementById("bancoForm").addEventListener("submit", async function(e
         })
         .catch(error => console.error("Error al actualizar banco:", error));
     } else {
-    fetch(apiUrl, {
+    fetch(`${apiUrl}/api/bancos`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

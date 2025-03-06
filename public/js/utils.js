@@ -1,14 +1,3 @@
-//** Conseguir la url de la API */
-async function obtenerConfig() {
-    try {
-      const respuesta = await fetch("/api/config"); // Llamada al servidor
-      const data = await respuesta.json();
-      return data.apiUrl;
-    } catch (error) {
-      console.error("Error obteniendo configuración:", error);
-    }
-  }
-
   // Función para mostrar las alertas con bootstrap
 function mostrarAlerta(mensaje, tipo) {
     const toastContainer = document.getElementById("toastContainer");
@@ -61,5 +50,19 @@ function formatearImporte(importe) {
     }).format(importe);
 }
 
+//** Conseguir la url de la API */
+async function obtenerConfig() {
+    try {
+      const respuesta = await fetch("/api/config"); // Llamada al servidor
+      const data = await respuesta.json();
+      return data.apiUrl;
+    } catch (error) {
+      console.error("Error obteniendo configuración:", error);
+    }
+  }
 
-export {formatearFecha, formatearImporte, mostrarAlerta, obtenerConfig } 
+
+window.formatearFecha = formatearFecha;
+window.formatearImporte = formatearImporte;
+window.mostrarAlerta = mostrarAlerta;
+window.obtenerConfig = obtenerConfig;

@@ -1,6 +1,3 @@
-import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "./utils.js";
-
-    const apiUrl = await obtenerConfig()
 
     let Chequeras = [];
     let currentPage = 1;
@@ -9,11 +6,15 @@ import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "
     //********************************************************************************
     // Cargar bancos 
     document.addEventListener("DOMContentLoaded", async () => {
+
         await cargarBancos();
+
     });
 
     async function fetchChequeras() {
         try {
+
+            const apiUrl = await obtenerConfig()
 
             await cargarBancos();
 
@@ -45,36 +46,16 @@ import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "
                 </td>
                 <td>
                     <div class="d-flex gap-2">
-                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Chequera" data-id="${Chequera.id}">
+                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Chequera" onclick="editarChequera(${Chequera.id})">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Chequera" data-id="${Chequera.id}" data-nombre="'${Chequera.Banco.nombre}'">
+                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Chequera" onclick="deleteChequera(${Chequera.id}, '${Chequera.Banco.nombre}')">
                                     <i class="fa-solid fa-trash"></i>
                             </button>
                     </div>
                 </td>
             </tr>
         `).join("");
-
-         // Agregar eventos después de insertar el HTML
-         document.querySelectorAll(".btn-warning").forEach((boton) => {
-            boton.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const id = this.getAttribute("data-id");
-                editarChequera(id);
-            });
-        });
-
-        document.querySelectorAll(".btn-danger").forEach((boton) => {
-            boton.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const id = this.getAttribute("data-id");
-                const nombre = this.getAttribute("data-nombre");
-                deleteChequera(id, nombre);
-            });
-        });
 
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
@@ -103,6 +84,9 @@ import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "
 // Función para cargar la lista de bancos desde la API
 async function cargarBancos() {
     try {
+
+        const apiUrl = await obtenerConfig()
+
         const response = await fetch(`${apiUrl}/api/bancos`);
         const bancos = await response.json();
         const bancoSelect = document.getElementById("banco");
@@ -133,7 +117,10 @@ document.getElementById("btnNuevo").addEventListener("click", function() {
     document.getElementById("banco").focus();
 });
 
-function editarChequera(id) {
+async function editarChequera(id) {
+
+    const apiUrl = await obtenerConfig()
+
     fetch(`${apiUrl}/api/chequeras/${id}`)
         .then(response => response.json())
         .then(Chequera => {
@@ -161,8 +148,11 @@ function deleteChequera(itemId, pTitle) {
     deleteModal.show();
 }
 
-document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
     if (itemIdToDelete !== null) {
+
+        const apiUrl = await obtenerConfig()
+
           fetch(`${apiUrl}/api/chequeras/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
             method: "DELETE",
             headers: {
@@ -192,7 +182,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
 
 //Enviar los datos para el ALTA del Chequera **************
 
-document.getElementById("chequeraForm").addEventListener("submit", function(event) {
+document.getElementById("chequeraForm").addEventListener("submit", async function(event) {
     event.preventDefault(); 
     event.stopPropagation();
 
@@ -210,7 +200,9 @@ document.getElementById("chequeraForm").addEventListener("submit", function(even
             numhasta: document.getElementById("numhasta").value,
             habilitada: document.getElementById("habilitada").checked
         };
+
         // URL de la API
+        const apiUrl = await obtenerConfig()
 
         // Configuración del POST
         if (idChequera) {

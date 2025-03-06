@@ -14,7 +14,8 @@ body{
 }
 
 .box-shd {
-    box-shadow: 5px 5px 10px gray;
+    /* box-shadow: 5px 5px 10px gray; */
+    box-shadow: 2px 2px 5px rgba(128, 128, 128, 0.5);
 }
 
 .product_list {
@@ -60,7 +61,6 @@ body{
 
 .navbar {
     border-radius: 6px !important;
-    box-shadow: 5px 5px 10px gray;
     overflow: hidden; /* Evita esquinas blancas */
 }
 
@@ -84,7 +84,6 @@ body{
 
 .card {
     border-radius: 12px;
-    box-shadow: 5px 5px 10px gray;
     margin-top: 0px; /* Alineación arriba dentro del contenedor */
 }
 .form-control:focus {

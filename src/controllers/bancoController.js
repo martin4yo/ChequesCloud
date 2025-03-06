@@ -26,8 +26,14 @@ async function obtenerBancoPorId(req, res) {
 
 async function eliminarBancoPorId(req, res) {
   const { id } = req.params
-  const bancos = await BancoManager.eliminarBancoPorId(id);
-  res.json({success:true, message : "Banco eliminado correctamente"});
+  try {
+    const bancos = await BancoManager.eliminarBancoPorId(id);
+    res.json({success:true, message : "Banco eliminado correctamente"});
+  }
+  catch (err) {
+    res.json({success:false, message : "El Banco no pudo ser eliminado"}).status(400);
+  }
+
 }
 
 module.exports = { crearBanco, obtenerBancos, obtenerBancoPorId, eliminarBancoPorId, modificarBanco};

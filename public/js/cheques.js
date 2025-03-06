@@ -1,9 +1,6 @@
-import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "./utils.js";
-
     let Cheques = [];
     let currentPage = 1;
     const rowsPerPage = 10;
-    const apiUrl = await obtenerConfig()
 
     //********************************************************************************
     // Cargar bancos 
@@ -13,6 +10,8 @@ import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "
 
     async function fetchCheques() {
         try {
+
+            const apiUrl = await obtenerConfig()
 
             await cargarBancos();
 
@@ -49,10 +48,10 @@ import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "
                 </td>
                 <td>
                     <div class="td-container">
-                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Cheque" data-id="${Cheque.id}">
+                            <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Cheque" onclick="editarCheque(${Cheque.id})">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Cheque" data-id="${Cheque.id}" data-numero="${Cheque.numero}">
+                            <button class="btn btn-danger box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar Cheque" onclick="deleteCheque(${Cheque.id}, ${Cheque.numero})">
                                     <i class="fa-solid fa-trash"></i>
                             </button>
                     </div>
@@ -60,33 +59,29 @@ import { obtenerConfig, formatearFecha, formatearImporte, mostrarAlerta } from "
             </tr>
         `).join("");
 
-        // Agregar eventos después de insertar el HTML
-        document.querySelectorAll(".btn-warning").forEach((boton) => {
-            boton.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const id = this.getAttribute("data-id");
-                editarCheque(id);
-            });
-        });
-
-        document.querySelectorAll(".btn-danger").forEach((boton) => {
-            boton.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const id = this.getAttribute("data-id");
-                const numero = this.getAttribute("data-numero");
-                deleteCheque(id, numero);
-            });
-        });
-
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
         document.getElementById("nextPage").parentElement.classList.toggle("disabled", end >= Cheques.length);
     }
 
-document.getElementById("prevPage").addEventListener("click", function(event) {
+    document.getElementById("prevPage").addEventListener("click", function(event) {
         event.preventDefault();
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable();
+        }
+    });
+
+    document.getElementById("conciliado").addEventListener("click", function(event) {
+  
+        if (this.checked){
+            const hoy = new Date().toISOString().split("T")[0];
+            document.getElementById("fechaconciliacion").value = hoy;
+        }
+        else {
+            document.getElementById("fechaconciliacion").value = null;
+        }
+
         if (currentPage > 1) {
             currentPage--;
             renderTable();
@@ -123,6 +118,8 @@ function crearFiltro(){
 // Función para cargar la lista de bancos desde la API
 async function cargarBancos() {
     try {
+
+        const apiUrl = await obtenerConfig()
 
         const response = await fetch(`${apiUrl}/api/bancos`);
         const bancos = await response.json();
@@ -205,6 +202,8 @@ let pTitleToDelete = null;
 
 async function editarCheque(id) {
 
+    const apiUrl = await obtenerConfig()
+
     fetch(`${apiUrl}/api/cheques/${id}`)
         .then(response => response.json())
         .then(Cheque => {
@@ -216,7 +215,7 @@ async function editarCheque(id) {
             document.getElementById("nombre").value = Cheque.nombre;
             document.getElementById("importe").value = Cheque.importe;
             document.getElementById("conciliado").checked = Cheque.conciliado;
-            document.getElementById("fechaconciliacion").value = Cheque.fechaconciliacion;
+            document.getElementById("fechaconciliacion").value = Cheque.conciliado ? Cheque.fechaconciliacion : null;
             document.getElementById("numero").focus();
         })
         .catch(error => console.error("Error al obtener Cheque:", error));
@@ -232,6 +231,7 @@ function deleteCheque(itemId, pTitle) {
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
 
+    const apiUrl = await obtenerConfig()
     
     if (itemIdToDelete !== null) {
           fetch(`${apiUrl}/api/cheques/${itemIdToDelete}/`, {  //Llamo a la API con el metodo para eliminar
@@ -268,17 +268,7 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
     event.stopPropagation();
 
     let form = event.target;
-    // let numDesde = document.getElementById("numdesde");
-    // let numHasta = document.getElementById("numhasta");
-
-    // // Validación personalizada: numdesde < numhasta
-    // if (parseInt(numDesde.value) >= parseInt(numHasta.value)) {
-    //     numHasta.classList.add("is-invalid");
-    //     numHasta.nextElementSibling.textContent = "Debe ser mayor que 'Número Desde'.";
-    // } else {
-    //     numHasta.classList.remove("is-invalid");
-    // }
-
+  
     // Validación de banco
     if (document.getElementById("bancoFiltro").value === ""){
         mostrarAlerta("Debe seleccionar un banco en los filtros", "danger");
@@ -291,6 +281,8 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
         mostrarAlerta(result.message, "danger"); 
         return result;
     }
+
+    const apiUrl = await obtenerConfig()
 
     // Intento guardar el cheque 
     if (form.checkValidity()) {
@@ -361,6 +353,8 @@ document.getElementById("chequeForm").addEventListener("submit", async function(
 });
 
 async function validarNumero(){
+
+    const apiUrl = await obtenerConfig()
 
     // Validacion de Numero de Cheque
     let chequeBanco = document.getElementById("bancoFiltro").value
