@@ -198,16 +198,6 @@
     </div>
 </div>
 
-<!-- Procesando datos -->
-<div id="loadingOverlay" class="loading-overlay d-none">
-    <div class="loading-content">
-        <div class="spinner-border text-light" role="status">
-            <span class="visually-hidden">Procesando...</span>
-        </div>
-        <p class="mt-2 text-white">Procesando datos...</p>
-    </div>
-</div>
-
 <!-- Modal de Confirmación -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog model-dialog-centered">
@@ -226,6 +216,17 @@
         </div>
     </div>
 </div>
+
+ <!-- Spinner de carga global -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="loading-content">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2 text-white fw-bold">Procesando datos...</p>
+    </div>
+</div>
+
 
 <div id="toastContainer" class="position-fixed top-50 start-50 translate-middle p-3" style="z-index: 1050;"></div>
 

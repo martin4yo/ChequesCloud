@@ -8,16 +8,16 @@
     // Cargar bancos 
     document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('navbarNav').classList.remove('hidden');
+        const loadingOverlay = document.getElementById("loadingOverlay");
         await cargarBancos();
     });
 
     async function fetchCheques() {
         try {
 
-            const loadingOverlay = document.getElementById("loadingOverlay");
-
             // Mostrar spinner
             loadingOverlay.classList.remove("d-none");
+            loadingOverlay.style.display = "flex";
 
             const apiUrl = await obtenerConfig()
             const filtros = crearFiltro()
@@ -35,6 +35,7 @@
 
             // Ocultar spinner
             loadingOverlay.classList.add("d-none");
+            loadingOverlay.style.display = "none";
 
         } catch (error) {
             document.getElementById("tablaCheques").innerHTML = `<tr><td colspan="2" class="text-danger">Error al cargar datos</td></tr>`;
