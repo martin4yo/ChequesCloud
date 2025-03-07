@@ -52,8 +52,6 @@ class ChequeManager {
 
     const filtros = {};
 
-console.log("Filtro", query);
-
     const { page, pageSize, banco, fechaEmisionDesde, fechaEmisionHasta, fechaVencimientoDesde, 
             fechaVencimientoHasta, conciliado, nombre, 
             importeDesde, importeHasta } = query;
@@ -90,8 +88,8 @@ console.log("Filtro", query);
     const { count, rows } = await Cheque.findAndCountAll({
         where: filtros,
         include: [{ model: Banco, attributes: ["nombre"] }],
-        limit: parseInt(pageSize),  // Límite de registros por página
-        offset: offset,   // Desde dónde comenzar
+        limit: parseInt(pageSize) || 10,  // Límite de registros por página
+        offset: offset ?? 10,   // Desde dónde comenzar
         order: [
           ['vencimiento', 'DESC'],  // Primero ordena por banco en orden ascendente
           ['importe', 'DESC'],  // Primero ordena por banco en orden ascendente
@@ -106,8 +104,8 @@ console.log("Filtro", query);
     // }));
 
     const resultado = { totalRegistros: count,
-                          totalPaginas: Math.ceil(count / parseInt(pageSize)),
-                          paginaActual: parseInt(page),
+                          totalPaginas: Math.ceil(count / parseInt(pageSize) || 10),
+                          paginaActual: parseInt(page) || 1,
                           cheques: rows,
                       }
 
