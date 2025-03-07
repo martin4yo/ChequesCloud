@@ -14,6 +14,11 @@
     async function fetchCheques() {
         try {
 
+            const loadingOverlay = document.getElementById("loadingOverlay");
+
+            // Mostrar spinner
+            loadingOverlay.classList.remove("d-none");
+
             const apiUrl = await obtenerConfig()
             const filtros = crearFiltro()
             
@@ -27,9 +32,16 @@
             totalRows = data.totalRegistros;
 
             renderTable();
+
+            // Ocultar spinner
+            loadingOverlay.classList.add("d-none");
+
         } catch (error) {
             document.getElementById("tablaCheques").innerHTML = `<tr><td colspan="2" class="text-danger">Error al cargar datos</td></tr>`;
             console.error("Error:", error);
+            loadingOverlay.innerHTML = `<div class="alert alert-danger" role="alert">
+                                            Error al cargar los datos
+                                        </div>`;
         }
     }
 
