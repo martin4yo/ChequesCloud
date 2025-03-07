@@ -13,7 +13,7 @@ const config = {
     host: process.env.DB_HOST,
     dialect: process.env.DB_DIALECT || "mssql", // Cambia según el motor: mysql, postgres, etc.
     port: process.env.DB_PORT || 1433,
-    logging : process.env.DB_LOGGING === "true" || false,
+    logging : true,
   },
 };
 

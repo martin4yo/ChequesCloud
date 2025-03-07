@@ -26,7 +26,7 @@ class ChequeManager {
 
         const cheque = await Cheque.findOne({
                                           where: filtros
-                                                });        
+                                          });        
         if (cheque){
           return {success:false, message: "Ese numero de cheque fue registrado"}
         }
@@ -81,7 +81,11 @@ class ChequeManager {
 
     const cheques = await Cheque.findAll({
         where: filtros,
-        include: [{ model: Banco, attributes: ["nombre"] }]
+        include: [{ model: Banco, attributes: ["nombre"] }],
+        order: [
+          ['vencimiento', 'DESC'],  // Primero ordena por banco en orden ascendente
+          ['importe', 'DESC'],  // Primero ordena por banco en orden ascendente
+        ]
     });
 
     // Ajustar la fecha al huso horario deseado

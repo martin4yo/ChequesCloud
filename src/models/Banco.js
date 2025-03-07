@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../../config"); // 
 
 const Banco = sequelize.define("Banco", {
-    codigo: { type: DataTypes.STRING(3) },
+    codigo: { type: DataTypes.STRING(10) },
     nombre: { type: DataTypes.STRING(100) },
     
   });

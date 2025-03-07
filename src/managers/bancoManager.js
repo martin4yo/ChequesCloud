@@ -26,7 +26,12 @@ class BancoManager {
   }
 
   async obtenerBancos() {
-    return await Banco.findAll();
+    return await Banco.findAll({
+      order: [
+        ['nombre', 'ASC']  // Primero ordena por banco en orden ascendente
+      ]
+    }
+    );
   }
 
   async obtenerBancoPorId(id) {
