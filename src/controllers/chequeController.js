@@ -70,6 +70,7 @@ async function exportarCheques(req, res) {
     worksheet.columns = [
         { header: "ID", key: "id", width: 10 },
         { header: "Banco", key: "banco", width: 40 },
+        { header: "Numero", key: "numero", width: 40 },
         { header: "Nombre", key: "nombre", width: 60 },
         { header: "Fecha Emisión", key: "emision", width: 15 },
         { header: "Fecha Vencimiento", key: "vencimiento", width: 15 },
@@ -82,6 +83,7 @@ async function exportarCheques(req, res) {
         worksheet.addRow({
             id: cheque.id,
             banco: cheque.Banco.nombre,
+            numero: cheque.numero,
             nombre: cheque.nombre,
             emision: new Date(cheque.emision), // Formato YYYY-MM-DD
             vencimiento: new Date(cheque.vencimiento),
@@ -97,11 +99,11 @@ async function exportarCheques(req, res) {
     const lastRow = worksheet.rowCount;
 
     // Insertar una fila con la suma en la columna "Edad" (columna D)
-    worksheet.getCell(`F${lastRow + 1}`).value = { formula: `SUM(F2:F${lastRow})` };
+    worksheet.getCell(`G${lastRow + 1}`).value = { formula: `SUM(G2:G${lastRow})` };
     // Poner en negrita el total
     worksheet.getRow(lastRow + 1).font = { bold: true };
     // Agregar la palabra Total a la izquierda de la suma
-    worksheet.getCell(`E${lastRow + 1}`).value = "Total : ";
+    worksheet.getCell(`F${lastRow + 1}`).value = "Total : ";
     // Aplicar formato a la columna de importes
     worksheet.getColumn(6).numFmt = '"$"#,##0.00';
    
