@@ -1,6 +1,7 @@
 
     let Cheques = [];
     let currentPage = 1;
+    let totalRows = 0;
     const rowsPerPage = 10;
 
     //********************************************************************************
@@ -23,6 +24,7 @@
             const data = await response.json();
 
             Cheques = data.cheques;
+            totalRows = data.totalRegistros;
 
             renderTable();
         } catch (error) {
@@ -62,7 +64,7 @@
 
         document.getElementById("currentPage").textContent = currentPage;
         document.getElementById("prevPage").parentElement.classList.toggle("disabled", currentPage === 1);
-        document.getElementById("nextPage").parentElement.classList.toggle("disabled", end >= Cheques.length);
+        document.getElementById("nextPage").parentElement.classList.toggle("disabled", end >= totalRows);
     }
 
     document.getElementById("prevPage").addEventListener("click", function(event) {
