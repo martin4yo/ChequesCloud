@@ -185,12 +185,42 @@ document.getElementById("limpiafiltro").addEventListener("click", function(event
 });
 
 //** Exporta a Excel */
-document.getElementById("btnExportar").addEventListener("click", function(event) {
+document.getElementById("btnExportar").addEventListener("click", async function(event) {
     event.preventDefault();
-    //** Pasar pasametros */
-    const filtros = crearFiltro();    
-    const params = new URLSearchParams(filtros).toString();  
-    window.location.href = `/exportar?${params}`; // Redirige para descargar el archivo
+
+    // Mostrar spinner
+    loadingOverlay.classList.remove("d-none");
+    loadingOverlay.style.display = "flex";
+     
+    try {
+
+        //** Pasar pasametros */
+        const filtros = crearFiltro();    
+        const params = new URLSearchParams(filtros).toString();  
+
+        const response = await fetch(`/exportar?${params}`);
+        if (!response.ok) throw new Error("Error al generar el archivo");
+
+        const blob = await response.blob(); // Convertir la respuesta a un Blob
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Cheques.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error("Error:", error);
+    } finally {
+        
+        // Ocultar spinner
+        loadingOverlay.classList.add("d-none");
+        loadingOverlay.style.display = "none";
+
+    }
+    
 });
 
 

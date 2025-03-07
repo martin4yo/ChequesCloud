@@ -60,7 +60,8 @@ async function exportarCheques(req, res) {
   try {
     // Recuperar los datos desde Sequelize
 
-    const cheques = await ChequeManager.obtenerCheques(req.query)
+    const data = await ChequeManager.obtenerCheques(req.query, false)
+    const cheques = data.cheques;
 
     // Crear un nuevo libro de Excel
     const workbook = new ExcelJS.Workbook();
@@ -105,7 +106,7 @@ async function exportarCheques(req, res) {
     // Agregar la palabra Total a la izquierda de la suma
     worksheet.getCell(`F${lastRow + 1}`).value = "Total : ";
     // Aplicar formato a la columna de importes
-    worksheet.getColumn(6).numFmt = '"$"#,##0.00';
+    worksheet.getColumn(7).numFmt = '"$"#,##0.00';
    
     // Configurar el tipo de respuesta
     res.setHeader(

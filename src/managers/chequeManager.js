@@ -48,7 +48,7 @@ class ChequeManager {
     }
   }
 
-  async obtenerCheques(query) {
+  async obtenerCheques(query, paged = true) {
 
     const filtros = {};
 
@@ -88,28 +88,19 @@ class ChequeManager {
     const { count, rows } = await Cheque.findAndCountAll({
         where: filtros,
         include: [{ model: Banco, attributes: ["nombre"] }],
-        limit: parseInt(pageSize) || 10,  // Límite de registros por página
-        offset: offset ?? 10,   // Desde dónde comenzar
+        limit: paged ? parseInt(pageSize) : 999999999 || 10,  // Límite de registros por página
+        offset: offset ?? 0,   // Desde dónde comenzar
         order: [
           ['vencimiento', 'DESC'],  // Primero ordena por banco en orden ascendente
           ['importe', 'DESC'],  // Primero ordena por banco en orden ascendente
         ]
     });
 
-    // Ajustar la fecha al huso horario deseado
-    // return cheques.map(cheque => ({
-    //     ...cheque.toJSON(),
-    //     emision: moment(cheque.emision).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
-    //     vencimiento: moment(cheque.vencimiento).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
-    // }));
-
     const resultado = { totalRegistros: count,
                           totalPaginas: Math.ceil(count / parseInt(pageSize) || 10),
                           paginaActual: parseInt(page) || 1,
                           cheques: rows,
                       }
-
-console.log("Resultado", resultado )
 
     return resultado;
     
