@@ -52,7 +52,11 @@ class ChequeManager {
 
     const filtros = {};
 
-    const { banco, fechaEmisionDesde, fechaEmisionHasta, fechaVencimientoDesde, fechaVencimientoHasta, conciliado, nombre, importeDesde, importeHasta } = query;
+console.log("Filtro", query);
+
+    const { page, pageSize, banco, fechaEmisionDesde, fechaEmisionHasta, fechaVencimientoDesde, 
+            fechaVencimientoHasta, conciliado, nombre, 
+            importeDesde, importeHasta } = query;
 
     if (banco) filtros.banco = banco;
     if (nombre) {
@@ -79,9 +83,15 @@ class ChequeManager {
         };
     }
 
-    const cheques = await Cheque.findAll({
+    // Paginacion
+
+    const offset = (parseInt(page) - 1) * parseInt(pageSize); // Calcula cuántos registros saltar
+
+    const { count, rows } = await Cheque.findAndCountAll({
         where: filtros,
         include: [{ model: Banco, attributes: ["nombre"] }],
+        limit: parseInt(pageSize),  // Límite de registros por página
+        offset: offset,   // Desde dónde comenzar
         order: [
           ['vencimiento', 'DESC'],  // Primero ordena por banco en orden ascendente
           ['importe', 'DESC'],  // Primero ordena por banco en orden ascendente
@@ -94,7 +104,18 @@ class ChequeManager {
     //     emision: moment(cheque.emision).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
     //     vencimiento: moment(cheque.vencimiento).tz("America/Argentina/Buenos_Aires").format("YYYY-MM-DD"),
     // }));
-    return cheques;
+
+    const resultado = { totalRegistros: count,
+                          totalPaginas: Math.ceil(count / parseInt(pageSize)),
+                          paginaActual: parseInt(page),
+                          cheques: rows,
+                      }
+
+console.log("Resultado", resultado )
+
+    return resultado;
+    
+    //cheques;
 
   }
 

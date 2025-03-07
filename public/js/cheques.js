@@ -17,10 +17,13 @@
             const filtros = crearFiltro()
             
             const params = new URLSearchParams(filtros).toString();  
-            const response = await fetch(`${apiUrl}/api/cheques?${params}`);
+            const response = await fetch(`${apiUrl}/api/cheques?page=${currentPage}&pageSize=${rowsPerPage}&${params}`);
 
             if (!response.ok) throw new Error("Error al recuperar los datos.");
-            Cheques = await response.json();
+            const data = await response.json();
+
+            Cheques = data.cheques;
+
             renderTable();
         } catch (error) {
             document.getElementById("tablaCheques").innerHTML = `<tr><td colspan="2" class="text-danger">Error al cargar datos</td></tr>`;
@@ -32,10 +35,9 @@
 
         const start = (currentPage - 1) * rowsPerPage;
         const end = start + rowsPerPage;
-        const ChequesPaginados = Cheques.slice(start, end);
 
         const tabla = document.getElementById("tablaCheques");
-        tabla.innerHTML = ChequesPaginados.map(Cheque => `
+        tabla.innerHTML = Cheques.map(Cheque => `
             <tr>
                 <td class="align-middle">${Cheque.numero}</td>
                 <td class="align-middle">${formatearFecha(Cheque.emision)}</td>
