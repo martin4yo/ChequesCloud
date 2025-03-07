@@ -71,7 +71,7 @@
         event.preventDefault();
         if (currentPage > 1) {
             currentPage--;
-            renderTable();
+            fetchCheques();
         }
     });
 
@@ -86,16 +86,17 @@
         }
 
         if (currentPage > 1) {
-            currentPage--;
-            renderTable();
+            fetchCheques();
         }
+
     });
 
     document.getElementById("nextPage").addEventListener("click", function(event) {
         event.preventDefault();
-        if (currentPage * rowsPerPage < Cheques.length) {
+
+        if (currentPage * rowsPerPage < totalRows) {
             currentPage++;
-            renderTable();
+            fetchCheques();
         }
     });
 
