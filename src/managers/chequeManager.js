@@ -1,5 +1,6 @@
 const { Cheque, Banco, Chequera } = require("../models");
 const { Op } = require("sequelize");
+const { sequelize } = require('../../config');
 const moment = require("moment-timezone");
 
 class ChequeManager {
@@ -45,6 +46,34 @@ class ChequeManager {
     } catch (error) {
         console.error("Error al actualizar el cheque:", error);
         return {success:false, message: "Error al actualizar el cheque"}
+    }
+  }
+
+  async conciliarCheque(id) {
+    try {
+ 
+        //Verificar si el cheque existe
+        const filtros =  {  id : id  }
+
+        const data = {
+          fechaconciliacion : new Date(),
+          conciliado : true
+        }
+
+        const [filasActualizadas] = await Cheque.update(data, {
+            where: { id: id }
+        });
+
+        if (filasActualizadas === 0) {
+            console.log("No se encontró el cheque.");
+            return {success:false, message: "No se encontró el cheque."}
+        }
+
+        console.log("Cheque actualizado correctamente.");
+        return {success:true, message: "Cheque conciliado correctamente"}
+    } catch (error) {
+        console.error("Error al actualizar el cheque:", error);
+        return {success:false, message: "Error al conciliar el cheque"}
     }
   }
 
@@ -105,6 +134,21 @@ class ChequeManager {
     return resultado;
     
     //cheques;
+
+  }
+
+  async obtenerCashFlow(query) {
+
+      const { fechaVencimientoDesde, fechaVencimientoHasta } = query;
+      const fdesde = fechaVencimientoDesde;
+      const fhasta = fechaVencimientoHasta;
+
+      const resultado = await sequelize.query("EXEC CashFlow :fdesde, :fhasta", {
+          replacements: { fdesde, fhasta }, // Pasar parámetros
+          type: sequelize.QueryTypes.SELECT // Si el SP devuelve datos
+      });
+
+      return resultado;
 
   }
 

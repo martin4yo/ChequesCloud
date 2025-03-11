@@ -54,6 +54,7 @@
         const tabla = document.getElementById("tablaCheques");
         tabla.innerHTML = Cheques.map(Cheque => `
             <tr>
+                <td class="align-middle">${Cheque.Banco.nombre}</td>
                 <td class="align-middle">${Cheque.numero}</td>
                 <td class="align-middle">${formatearFecha(Cheque.emision)}</td>
                 <td class="align-middle">${formatearFecha(Cheque.vencimiento)}</td>
@@ -64,6 +65,9 @@
                 </td>
                 <td>
                     <div class="td-container">
+                            <button class="btn btn-success box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Conciliado!" onclick="conciliarCheque(${Cheque.id})">
+                                    <i class="fa-solid fa-check"></i>
+                            </button>
                             <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Cheque" onclick="editarCheque(${Cheque.id})">
                                     <i class="fa-solid fa-pen"></i>
                             </button>
@@ -267,6 +271,32 @@ async function editarCheque(id) {
             document.getElementById("numero").focus();
         })
         .catch(error => console.error("Error al obtener Cheque:", error));
+}
+
+async function conciliarCheque(id) {
+
+    const apiUrl = await obtenerConfig()
+
+    fetch(`${apiUrl}/api/cheques/conciliar/${id}` , {  //Llamo a la API con el metodo para actaulizar
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }
+        )  
+        .then(response => {
+            if (!response.ok) {  // Si la respuesta no fue satisfactoria
+                throw new Error("Error al conciliar el Cheque");
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                fetchCheques();
+            }
+        })
+        .catch(error => console.error("Error al obtener Cheque:", error));
+
 }
 
 function deleteCheque(itemId, pTitle) {

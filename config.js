@@ -24,7 +24,7 @@ const sequelize = new Sequelize(
     {
     host: config.db.host,
     dialect: config.db.dialect,
-    timezone: '+00:00', // Almacenar y recuperar en UTC sin conversión
+    timezone: 'UTC', // Almacenar y recuperar en UTC sin conversión
     dialectOptions: {
       connectTimeout: 60000, // Timeout de conexión (en milisegundos)
       useUTC: true,  // Asegura que se guarden en UTC
