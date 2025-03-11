@@ -38,6 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <tr>
                 <td>${banco.codigo}</td>
                 <td class="w-100">${banco.nombre}</td>
+                <td class="toggle-switch align-middle">
+                        <input type="checkbox" class="form-check-input" disabled 
+                            ${banco.habilitado ? "checked" : ""}>
+                </td>
                 <td>
                     <div class="d-flex gap-2">
                             <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Banco" onclick="editarBanco(${banco.id})">
@@ -86,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.getElementById("btnNuevo").addEventListener("click", function() {
     document.getElementById("codigoBanco").value = "";
     document.getElementById("nombreBanco").value = "";
+    document.getElementById("habilitado").checked = false;
     document.getElementById("codigoBanco").focus();
 });
 
@@ -99,6 +104,7 @@ async function editarBanco(id) {
             document.getElementById("idBanco").value = banco.id;
             document.getElementById("codigoBanco").value = banco.codigo;
             document.getElementById("nombreBanco").value = banco.nombre;
+            document.getElementById("habilitado").value = banco.habilitado;
             document.getElementById("codigoBanco").focus();
         })
         .catch(error => console.error("Error al obtener banco:", error));
@@ -166,7 +172,8 @@ document.getElementById("bancoForm").addEventListener("submit", async function(e
   const idBanco = document.getElementById("idBanco").value;
   const bancoData = {
       codigo: document.getElementById("codigoBanco").value,
-      nombre: document.getElementById("nombreBanco").value
+      nombre: document.getElementById("nombreBanco").value,
+      habilitado: document.getElementById("habilitado").checked
   };
 
   const apiUrl = await obtenerConfig()

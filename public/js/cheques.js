@@ -65,7 +65,7 @@
                 </td>
                 <td>
                     <div class="td-container">
-                            <button class="btn btn-success box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Conciliado!" onclick="conciliarCheque(${Cheque.id})">
+                            <button class="btn btn-success box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Conciliado!" onclick="conciliarCheque(${Cheque.id})" ${Cheque.conciliado ? "disabled" : "enabled"}>
                                     <i class="fa-solid fa-check"></i>
                             </button>
                             <button class="btn btn-warning box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Cheque" onclick="editarCheque(${Cheque.id})">
@@ -124,6 +124,7 @@
 function crearFiltro(){
     return {
         banco: document.getElementById("bancoFiltro").value,
+        habilitado: document.getElementById("bancoHabilitado").checked,
         fechaEmisionDesde: document.getElementById("emisiondesde").value || "1900-01-01",
         fechaEmisionHasta: document.getElementById("emisionhasta").value || "2050-12-31",
         fechaVencimientoDesde: document.getElementById("vencimientodesde").value || "1900-01-01",
@@ -146,12 +147,23 @@ async function cargarBancos() {
         const bancos = await response.json();
         
         const bancoFiltro = document.getElementById("bancoFiltro");
+        bancoFiltro.innerHTML = "";
+
+        const bancoHabilitado = document.getElementById("bancoHabilitado").checked;
+
+        //Primer registro 
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Seleccione un banco";
+        bancoFiltro.appendChild(option);
 
         bancos.forEach(banco => {
-            const option = document.createElement("option");
-            option.value = banco.id;
-            option.textContent = banco.nombre;
-            bancoFiltro.appendChild(option);
+            if (banco.habilitado || !bancoHabilitado){
+                const option = document.createElement("option");
+                option.value = banco.id;
+                option.textContent = banco.nombre;
+                bancoFiltro.appendChild(option);
+            }
         });
     } catch (error) {
         console.error("Error al cargar los bancos:", error);
@@ -169,7 +181,13 @@ document.getElementById("aplicafiltro").addEventListener("click", function(event
     else {
         document.getElementById("tituloCheques").innerHTML = "Cheques";
     }
+    currentPage = 1;
     fetchCheques();
+});
+
+//** Aplicacion del Filtro */
+document.getElementById("bancoHabilitado").addEventListener("click", async function(event) {
+    await cargarBancos();
 });
 
 //** Limpia el Filtro */

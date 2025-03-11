@@ -81,11 +81,12 @@ class ChequeManager {
 
     const filtros = {};
 
-    const { page, pageSize, banco, fechaEmisionDesde, fechaEmisionHasta, fechaVencimientoDesde, 
+    const { page, pageSize, banco, habilitado, fechaEmisionDesde, fechaEmisionHasta, fechaVencimientoDesde, 
             fechaVencimientoHasta, conciliado, nombre, 
             importeDesde, importeHasta } = query;
 
     if (banco) filtros.banco = banco;
+    
     if (nombre) {
         filtros.nombre = { [Op.like]: `%${nombre}%` };
     }
@@ -114,9 +115,16 @@ class ChequeManager {
 
     const offset = (parseInt(page) - 1) * parseInt(pageSize); // Calcula cuántos registros saltar
 
+    // Habilitacion de bancos
+    let filtroHabilitado 
+
+    if (habilitado === "true"){
+      filtroHabilitado = { habilitado: true }
+    }
+    
     const { count, rows } = await Cheque.findAndCountAll({
         where: filtros,
-        include: [{ model: Banco, attributes: ["nombre"] }],
+        include: [{ model: Banco, attributes: ["nombre", "habilitado"], where: filtroHabilitado }],
         limit: paged ? parseInt(pageSize) : 999999999 || 10,  // Límite de registros por página
         offset: offset ?? 0,   // Desde dónde comenzar
         order: [

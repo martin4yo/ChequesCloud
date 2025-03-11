@@ -12,6 +12,7 @@
                         <tr>
                             <th>Código</th>
                             <th>Nombre</th>
+                            <th>Habilitado</th>
                             <th>Accion</th>
                         </tr>
                     </thead>
@@ -47,6 +48,10 @@
                         <div class="mb-3">
                             <label for="nombreBanco" class="form-label">Nombre de Banco</label>
                             <input type="text" class="form-control" id="nombreBanco" required maxlength="200">
+                        </div>
+                         <div class="mb-3 toggle-container">
+                            <label for="habilitado">Habilitado</label>
+                            <input type="checkbox" id="habilitado" class="form-check-input">
                         </div>
                         <div class="d-flex justify-content-end">
                             <button type="button" class="btn btn-success box-shd" data-bs-toggle="tooltip" data-bs-placement="top" title="Nuevo Banco" id="btnNuevo">
