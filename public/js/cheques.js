@@ -122,12 +122,15 @@
 //* Crear Objeto Filtros
 
 function crearFiltro(){
+
+    const hoy = new Date().toISOString().split('T')[0];
+
     return {
         banco: document.getElementById("bancoFiltro").value,
         habilitado: document.getElementById("bancoHabilitado").checked,
         fechaEmisionDesde: document.getElementById("emisiondesde").value || "1900-01-01",
         fechaEmisionHasta: document.getElementById("emisionhasta").value || "2050-12-31",
-        fechaVencimientoDesde: document.getElementById("vencimientodesde").value || "1900-01-01",
+        fechaVencimientoDesde: document.getElementById("vencimientodesde").value || hoy,
         fechaVencimientoHasta: document.getElementById("vencimientohasta").value || "2050-12-31",
         conciliado: document.getElementById("conciliadoFiltro").value,
         nombre : document.getElementById("nombreFiltro").value,
