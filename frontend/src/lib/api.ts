@@ -2,8 +2,7 @@ import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '../types';
 
-// const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-const API_BASE_URL: string = 'http://localhost:3000/api';
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 // Create axios instance
 export const api = axios.create({

@@ -15,13 +15,18 @@ import Table from '../components/ui/Table';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 
+// Form type that matches the input fields
+interface BancoFormData {
+  nombre: string;
+  codigo: string;
+  habilitado: string;
+}
+
 const bancoSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   codigo: z.string().min(2, 'El código debe tener al menos 2 caracteres'),
-  habilitado: z.boolean(),
+  habilitado: z.string().min(1, 'Debe seleccionar un estado'),
 });
-
-type BancoFormData = z.infer<typeof bancoSchema>;
 
 const BancosPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,7 +53,9 @@ const BancosPage: React.FC = () => {
   } = useForm<BancoFormData>({
     resolver: zodResolver(bancoSchema),
     defaultValues: {
-      habilitado: true,
+      nombre: '',
+      codigo: '',
+      habilitado: 'true',
     },
   });
 
@@ -132,7 +139,7 @@ const BancosPage: React.FC = () => {
 
   const handleCreate = () => {
     setEditingBanco(null);
-    reset({ habilitado: true });
+    reset({ nombre: '', codigo: '', habilitado: 'true' });
     setIsModalOpen(true);
   };
 
@@ -140,7 +147,7 @@ const BancosPage: React.FC = () => {
     setEditingBanco(banco);
     setValue('nombre', banco.nombre);
     setValue('codigo', banco.codigo);
-    setValue('habilitado', banco.habilitado);
+    setValue('habilitado', banco.habilitado.toString());
     setIsModalOpen(true);
   };
 
@@ -158,10 +165,17 @@ const BancosPage: React.FC = () => {
   };
 
   const onSubmit = async (data: BancoFormData) => {
+    // Transform form data to API format
+    const transformedData: BancoInput = {
+      nombre: data.nombre,
+      codigo: data.codigo,
+      habilitado: data.habilitado === 'true',
+    };
+
     if (editingBanco) {
-      updateMutation.mutate({ id: editingBanco.id, data });
+      updateMutation.mutate({ id: editingBanco.id, data: transformedData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(transformedData);
     }
   };
 

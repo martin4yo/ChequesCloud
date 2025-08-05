@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { ApiResponse, ChequeInput, PaginationQuery } from '../types';
-import { Cheque, Chequera, Banco } from '../models';
-import { Op } from 'sequelize';
+import { Cheque, Chequera, Banco, sequelize } from '../models';
+import { Op, QueryTypes } from 'sequelize';
 import { exportToExcel } from '../utils/excel';
+import ExcelJS from 'exceljs';
+import moment from 'moment';
 
 export const getCheques = asyncHandler(async (req: Request, res: Response) => {
   const { 
@@ -390,23 +392,10 @@ export const marcarComoCobrado = asyncHandler(async (req: Request, res: Response
   res.json(response);
 });
 
-export const exportChequesToExcel = asyncHandler(async (req: Request, res: Response) => {
-  const { 
-    chequeraId, 
-    bancoId, 
-    estado, 
-    fechaDesde, 
-    fechaHasta,
-    search
-  } = req.query as {
-    chequeraId?: string;
-    bancoId?: string;
-    estado?: string;
-    fechaDesde?: string;
-    fechaHasta?: string;
-    search?: string;
-  };
-
+// Función auxiliar para obtener CashFlow agrupado por fecha y banco
+const obtenerCashFlow = async (filters: any) => {
+  const { chequeraId, bancoId, estado, fechaDesde, fechaHasta, search } = filters;
+  
   const whereClause: any = {};
   const includeClause: any = {
     model: Chequera,
@@ -421,6 +410,7 @@ export const exportChequesToExcel = asyncHandler(async (req: Request, res: Respo
     ]
   };
 
+  // Aplicar filtros
   if (search) {
     whereClause[Op.or] = [
       { numero: { [Op.like]: `%${search}%` } },
@@ -429,66 +419,331 @@ export const exportChequesToExcel = asyncHandler(async (req: Request, res: Respo
     ];
   }
 
-  if (chequeraId) {
-    whereClause.chequeraId = chequeraId;
-  }
-
-  if (bancoId) {
-    includeClause.where = { bancoId };
-  }
-
-  if (estado) {
-    whereClause.estado = estado;
-  }
+  if (chequeraId) whereClause.chequeraId = chequeraId;
+  if (bancoId) includeClause.where = { bancoId };
+  if (estado) whereClause.estado = estado;
 
   if (fechaDesde && fechaHasta) {
-    whereClause.fechaVencimiento = {
-      [Op.between]: [fechaDesde, fechaHasta] // DATEONLY fields work directly with string dates
-    };
+    whereClause.fechaVencimiento = { [Op.between]: [fechaDesde, fechaHasta] };
   } else if (fechaDesde) {
-    whereClause.fechaVencimiento = {
-      [Op.gte]: fechaDesde
-    };
+    whereClause.fechaVencimiento = { [Op.gte]: fechaDesde };
   } else if (fechaHasta) {
-    whereClause.fechaVencimiento = {
-      [Op.lte]: fechaHasta
-    };
+    whereClause.fechaVencimiento = { [Op.lte]: fechaHasta };
   }
 
-  const cheques = await Cheque.findAll({
-    where: whereClause,
-    include: [includeClause],
-    order: [['fechaEmision', 'DESC']]
+  // Obtener cheques agrupados usando raw query para mayor control
+  const cheques = await sequelize.query(`
+    SELECT 
+      c.fechaVencimiento,
+      b.nombre as bancoNombre,
+      SUM(c.monto) as totalMonto
+    FROM cheques c
+    INNER JOIN chequeras ch ON c.chequeraId = ch.id
+    INNER JOIN bancos b ON ch.bancoId = b.id
+    ${Object.keys(whereClause).length > 0 ? 'WHERE 1=1' : ''}
+    ${filters.search ? `AND (c.numero LIKE '%${filters.search}%' OR c.beneficiario LIKE '%${filters.search}%' OR c.concepto LIKE '%${filters.search}%')` : ''}
+    ${filters.chequeraId ? `AND c.chequeraId = ${filters.chequeraId}` : ''}
+    ${filters.bancoId ? `AND ch.bancoId = ${filters.bancoId}` : ''}
+    ${filters.estado ? `AND c.estado = '${filters.estado}'` : ''}
+    ${filters.fechaDesde && filters.fechaHasta ? `AND c.fechaVencimiento BETWEEN '${filters.fechaDesde}' AND '${filters.fechaHasta}'` : ''}
+    ${filters.fechaDesde && !filters.fechaHasta ? `AND c.fechaVencimiento >= '${filters.fechaDesde}'` : ''}
+    ${!filters.fechaDesde && filters.fechaHasta ? `AND c.fechaVencimiento <= '${filters.fechaHasta}'` : ''}
+    GROUP BY c.fechaVencimiento, b.nombre
+    ORDER BY c.fechaVencimiento ASC
+  `, { type: QueryTypes.SELECT });
+
+  // Transformar datos para tabla dinámica
+  const cashFlowMap = new Map();
+  const bancos = new Set();
+
+  cheques.forEach((cheque: any) => {
+    const fecha = cheque.fechaVencimiento;
+    const banco = cheque.bancoNombre || 'Sin banco';
+    const monto = parseFloat(cheque.totalMonto) || 0;
+
+    bancos.add(banco);
+
+    if (!cashFlowMap.has(fecha)) {
+      cashFlowMap.set(fecha, { Vencimiento: fecha });
+    }
+
+    cashFlowMap.get(fecha)[banco] = monto;
   });
 
-  const excelData = cheques.map(cheque => ({
-    numero: cheque.numero,
-    banco: cheque.chequera?.banco?.nombre || '',
-    chequera: cheque.chequera?.numero || '',
-    fechaEmision: cheque.fechaEmision, // DATEONLY field already in YYYY-MM-DD format
-    fechaVencimiento: cheque.fechaVencimiento, // DATEONLY field already in YYYY-MM-DD format
-    beneficiario: cheque.beneficiario,
-    concepto: cheque.concepto,
-    monto: cheque.monto,
-    estado: cheque.estado,
-    fechaCobro: cheque.fechaCobro ? cheque.fechaCobro.toISOString().split('T')[0] : ''
-  }));
-
-  await exportToExcel(res, {
-    filename: `cheques_${new Date().toISOString().split('T')[0]}.xlsx`,
-    sheetName: 'Cheques',
-    data: excelData,
-    columns: [
-      { key: 'numero', header: 'Número', width: 15 },
-      { key: 'banco', header: 'Banco', width: 20 },
-      { key: 'chequera', header: 'Chequera', width: 15 },
-      { key: 'fechaEmision', header: 'Fecha Emisión', width: 12 },
-      { key: 'fechaVencimiento', header: 'Fecha Vencimiento', width: 12 },
-      { key: 'beneficiario', header: 'Beneficiario', width: 25 },
-      { key: 'concepto', header: 'Concepto', width: 30 },
-      { key: 'monto', header: 'Monto', width: 12 },
-      { key: 'estado', header: 'Estado', width: 12 },
-      { key: 'fechaCobro', header: 'Fecha Cobro', width: 12 }
-    ]
+  // Convertir a array y llenar celdas vacías
+  const cashFlowArray = Array.from(cashFlowMap.values()).map(row => {
+    bancos.forEach(banco => {
+      if (!row[banco as string]) {
+        row[banco as string] = 0;
+      }
+    });
+    return row;
   });
+
+  return cashFlowArray;
+};
+
+export const exportChequesToExcel = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const filters = req.query as {
+      chequeraId?: string;
+      bancoId?: string;
+      estado?: string;
+      fechaDesde?: string;
+      fechaHasta?: string;
+      search?: string;
+    };
+
+    // Obtener datos de cheques
+    const whereClause: any = {};
+    const includeClause: any = {
+      model: Chequera,
+      as: 'chequera',
+      attributes: ['id', 'numero', 'bancoId'],
+      include: [
+        {
+          model: Banco,
+          as: 'banco',
+          attributes: ['id', 'nombre', 'codigo']
+        }
+      ]
+    };
+
+    // Aplicar filtros
+    if (filters.search) {
+      whereClause[Op.or] = [
+        { numero: { [Op.like]: `%${filters.search}%` } },
+        { beneficiario: { [Op.like]: `%${filters.search}%` } },
+        { concepto: { [Op.like]: `%${filters.search}%` } }
+      ];
+    }
+
+    if (filters.chequeraId) whereClause.chequeraId = filters.chequeraId;
+    if (filters.bancoId) includeClause.where = { bancoId: filters.bancoId };
+    if (filters.estado) whereClause.estado = filters.estado;
+
+    if (filters.fechaDesde && filters.fechaHasta) {
+      whereClause.fechaVencimiento = {
+        [Op.between]: [filters.fechaDesde, filters.fechaHasta]
+      };
+    } else if (filters.fechaDesde) {
+      whereClause.fechaVencimiento = { [Op.gte]: filters.fechaDesde };
+    } else if (filters.fechaHasta) {
+      whereClause.fechaVencimiento = { [Op.lte]: filters.fechaHasta };
+    }
+
+    const cheques = await Cheque.findAll({
+      where: whereClause,
+      include: [includeClause],
+      order: [['fechaVencimiento', 'ASC'], ['id', 'ASC']]
+    });
+
+    // Crear libro de Excel
+    const workbook = new ExcelJS.Workbook();
+    
+    // HOJA 1: Lista de cheques con subtotales por fecha
+    const worksheet = workbook.addWorksheet("Cheques");
+
+    // Definir columnas
+    worksheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Banco", key: "banco", width: 25 },
+      { header: "Número", key: "numero", width: 15 },
+      { header: "Beneficiario", key: "beneficiario", width: 30 },
+      { header: "Fecha Emisión", key: "fechaEmision", width: 15 },
+      { header: "Fecha Vencimiento", key: "fechaVencimiento", width: 15 },
+      { header: "Importe", key: "importe", width: 15 },
+      { header: "Estado", key: "estado", width: 12 }
+    ];
+
+    let currentVencimiento: string | null = null;
+    let startRowVencimiento = 2;
+    let rowNumber = 1;
+
+    // Agregar datos con subtotales
+    cheques.forEach((cheque) => {
+      // Sumar 1 día a fecha de vencimiento para compensar zona horaria
+      const vencimientoFormateado = moment(cheque.fechaVencimiento).add(1, 'day').format("DD/MM/YYYY");
+      
+      // Validar si es la primera fila
+      if (currentVencimiento === null) {
+        currentVencimiento = vencimientoFormateado;
+      }
+
+      rowNumber += 1;
+
+      // Validar corte de control por fecha de vencimiento
+      if (currentVencimiento !== vencimientoFormateado) {
+        // Agregar subtotal
+        const subtotalRow = worksheet.addRow({
+          fechaVencimiento: `Subtotal ${currentVencimiento}`,
+          importe: { formula: `SUM(G${startRowVencimiento}:G${rowNumber - 1})` }
+        });
+
+        // Estilo para subtotales
+        subtotalRow.font = { bold: true };
+        subtotalRow.getCell('G').border = {
+          top: { style: 'thin' },
+          bottom: { style: 'double' }
+        };
+
+        currentVencimiento = vencimientoFormateado;
+        rowNumber += 1;
+        startRowVencimiento = rowNumber;
+      }
+
+      // Agregar fila de datos
+      worksheet.addRow({
+        id: cheque.id,
+        banco: cheque.chequera?.banco?.nombre || '',
+        numero: cheque.numero,
+        beneficiario: cheque.beneficiario,
+        fechaEmision: moment(cheque.fechaEmision).add(1, 'day').format("DD/MM/YYYY"), // +1 día también a fecha emisión
+        fechaVencimiento: vencimientoFormateado,
+        importe: Number(cheque.monto.toFixed(2)),
+        estado: cheque.estado
+      });
+    });
+
+    // Agregar último subtotal si hay datos
+    if (cheques.length > 0 && currentVencimiento) {
+      const subtotalRow = worksheet.addRow({
+        fechaVencimiento: `Subtotal ${currentVencimiento}`,
+        importe: { formula: `SUM(G${startRowVencimiento}:G${rowNumber})` }
+      });
+      subtotalRow.font = { bold: true };
+      subtotalRow.getCell('G').border = {
+        top: { style: 'thin' },
+        bottom: { style: 'double' }
+      };
+    }
+
+    // Configurar formato de la primera hoja
+    worksheet.getRow(1).font = { bold: true };
+    const lastRow = worksheet.rowCount;
+
+    // Total general
+    if (lastRow > 1) {
+      const totalRow = worksheet.addRow({
+        fechaVencimiento: "TOTAL GENERAL:",
+        importe: { formula: `SUMIF(F:F,"<>Subtotal*",G:G)` }
+      });
+      totalRow.font = { bold: true, size: 12 };
+      totalRow.getCell('G').border = {
+        top: { style: 'double' },
+        bottom: { style: 'double' }
+      };
+    }
+
+    // Formato de columna de importes
+    worksheet.getColumn('G').numFmt = '#,##0.00';
+
+    // HOJA 2: CashFlow (Tabla dinámica por fecha y banco)
+    const cashFlow = await obtenerCashFlow(filters);
+    const dynamicTable = workbook.addWorksheet('CashFlow');
+
+    if (cashFlow.length > 0) {
+      // Obtener headers dinámicamente
+      const headers = Object.keys(cashFlow[0]);
+
+      // Definir columnas
+      dynamicTable.columns = headers.map(header => ({
+        header: header,
+        key: header,
+        width: header === 'Vencimiento' ? 15 : 20
+      }));
+
+      // Agregar datos con +1 día a las fechas
+      cashFlow.forEach(row => {
+        if (row.Vencimiento) {
+          row.Vencimiento = moment(row.Vencimiento).add(1, 'day').format("DD/MM/YYYY");
+        }
+        dynamicTable.addRow(row);
+      });
+
+      // Agregar columna "Total" para suma por fila
+      const bancoHeaders = headers.filter(h => h !== 'Vencimiento');
+      
+      // Agregar header "Total" 
+      dynamicTable.getColumn(headers.length + 1).header = 'Total';
+      dynamicTable.getColumn(headers.length + 1).width = 20;
+      
+      // Agregar fórmulas de suma por fila
+      dynamicTable.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          // Header row - ya agregado arriba
+          return;
+        }
+        
+        // Calcular rango de columnas para la suma (desde B hasta la penúltima columna)
+        const startCol = String.fromCharCode(66); // B
+        const endCol = String.fromCharCode(65 + bancoHeaders.length); // Última columna de banco
+        row.getCell(headers.length + 1).value = { 
+          formula: `SUM(${startCol}${rowNumber}:${endCol}${rowNumber})` 
+        };
+      });
+
+      // Agregar fila de totales por columna
+      const totalRowData: any = { Vencimiento: 'TOTAL' };
+      
+      // Agregar fórmulas de suma por columna
+      bancoHeaders.forEach((banco, index) => {
+        const colLetter = String.fromCharCode(66 + index); // B, C, D, etc.
+        const lastDataRow = dynamicTable.rowCount;
+        totalRowData[banco] = { formula: `SUM(${colLetter}2:${colLetter}${lastDataRow})` };
+      });
+      
+      // Total general (suma de todos los bancos)
+      const startColTotal = String.fromCharCode(66); // B
+      const endColTotal = String.fromCharCode(65 + bancoHeaders.length); // Última columna de banco
+      const totalRowNumber = dynamicTable.rowCount + 1;
+      totalRowData['Total'] = { formula: `SUM(${startColTotal}${totalRowNumber}:${endColTotal}${totalRowNumber})` };
+      
+      const totalRow = dynamicTable.addRow(totalRowData);
+      totalRow.font = { bold: true };
+      
+      // Aplicar formato de moneda a la columna Total
+      dynamicTable.getColumn(headers.length + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber > 1) { // Saltar header
+          cell.numFmt = '[Black]#,##0.00;[Red]-#,##0.00;;';
+        }
+      });
+
+      // Estilizar headers
+      dynamicTable.getRow(1).font = { bold: true };
+
+      // Formato de moneda para columnas de bancos (desde la segunda columna)
+      dynamicTable.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Saltar headers
+
+        row.eachCell((cell, colNumber) => {
+          if (colNumber > 1) { // Aplicar formato desde la segunda columna
+            cell.numFmt = '[Black]#,##0.00;[Red]-#,##0.00;;';
+          }
+        });
+      });
+
+      // Agregar filtro (incluyendo la columna Total)
+      const headerRange = `A1:${String.fromCharCode(65 + headers.length)}1`;
+      dynamicTable.autoFilter = headerRange;
+    }
+
+    // Configurar respuesta HTTP
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=cheques_${moment().format('YYYY-MM-DD')}.xlsx`
+    );
+
+    // Enviar archivo
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error("Error al exportar:", error);
+    throw new AppError("Error al generar el archivo Excel", 500);
+  }
 });

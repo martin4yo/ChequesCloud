@@ -17,19 +17,41 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { formatCurrency } from '../lib/utils';
 
+// Form type that matches the input fields
+interface ChequeraFormData {
+  numero: string;
+  bancoId: string;
+  saldoInicial: string;
+  activa: string;
+  chequeDesde: string;
+  chequeHasta: string;
+}
+
+// Simple validation schema without complex transformations
 const chequeraSchema = z.object({
   numero: z.string().min(1, 'El número es requerido'),
-  bancoId: z.number().min(1, 'Debe seleccionar un banco'),
-  saldoInicial: z.number().min(0, 'El saldo no puede ser negativo'),
-  activa: z.boolean(),
-  chequeDesde: z.number().min(1, 'El número inicial debe ser mayor a 0'),
-  chequeHasta: z.number().min(1, 'El número final debe ser mayor a 0'),
-}).refine((data) => data.chequeHasta > data.chequeDesde, {
+  bancoId: z.string().min(1, 'Debe seleccionar un banco'),
+  saldoInicial: z.string().min(1, 'El saldo inicial es requerido').refine(val => {
+    const num = Number(val);
+    return !isNaN(num) && num >= 0;
+  }, 'El saldo debe ser un número mayor o igual a 0'),
+  activa: z.string().min(1, 'Debe seleccionar un estado'),
+  chequeDesde: z.string().min(1, 'El número inicial es requerido').refine(val => {
+    const num = Number(val);
+    return !isNaN(num) && num > 0;
+  }, 'El número inicial debe ser mayor a 0'),
+  chequeHasta: z.string().min(1, 'El número final es requerido').refine(val => {
+    const num = Number(val);
+    return !isNaN(num) && num > 0;
+  }, 'El número final debe ser mayor a 0'),
+}).refine((data) => {
+  const desde = Number(data.chequeDesde);
+  const hasta = Number(data.chequeHasta);
+  return hasta > desde;
+}, {
   message: "El número final debe ser mayor al número inicial",
   path: ["chequeHasta"],
 });
-
-type ChequeraFormData = z.infer<typeof chequeraSchema>;
 
 const ChequerasPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,8 +78,12 @@ const ChequerasPage: React.FC = () => {
   } = useForm<ChequeraFormData>({
     resolver: zodResolver(chequeraSchema),
     defaultValues: {
-      activa: true,
-      saldoInicial: 0,
+      numero: '',
+      bancoId: '',
+      activa: 'true',
+      saldoInicial: '0',
+      chequeDesde: '1',
+      chequeHasta: '100',
     },
   });
 
@@ -147,18 +173,25 @@ const ChequerasPage: React.FC = () => {
 
   const handleCreate = () => {
     setEditingChequera(null);
-    reset({ activa: 'true' as any, saldoInicial: 0, chequeDesde: 1, chequeHasta: 100 });
+    reset({ 
+      numero: '',
+      bancoId: '',
+      activa: 'true', 
+      saldoInicial: '0', 
+      chequeDesde: '1', 
+      chequeHasta: '100' 
+    });
     setIsModalOpen(true);
   };
 
   const handleEdit = (chequera: Chequera) => {
     setEditingChequera(chequera);
     setValue('numero', chequera.numero);
-    setValue('bancoId', chequera.bancoId);
-    setValue('saldoInicial', chequera.saldoInicial);
-    setValue('chequeDesde', chequera.chequeDesde);
-    setValue('chequeHasta', chequera.chequeHasta);
-    setValue('activa', chequera.activa.toString() as any);
+    setValue('bancoId', chequera.bancoId.toString());
+    setValue('saldoInicial', chequera.saldoInicial.toString());
+    setValue('chequeDesde', chequera.chequeDesde.toString());
+    setValue('chequeHasta', chequera.chequeHasta.toString());
+    setValue('activa', chequera.activa.toString());
     setIsModalOpen(true);
   };
 
@@ -176,10 +209,20 @@ const ChequerasPage: React.FC = () => {
   };
 
   const onSubmit = async (data: ChequeraFormData) => {
+    // Transform form data to API format
+    const transformedData: ChequeraInput = {
+      numero: data.numero,
+      bancoId: Number(data.bancoId),
+      saldoInicial: Number(data.saldoInicial),
+      activa: data.activa === 'true',
+      chequeDesde: Number(data.chequeDesde),
+      chequeHasta: Number(data.chequeHasta),
+    };
+
     if (editingChequera) {
-      updateMutation.mutate({ id: editingChequera.id, data });
+      updateMutation.mutate({ id: editingChequera.id, data: transformedData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(transformedData);
     }
   };
 
@@ -309,7 +352,7 @@ const ChequerasPage: React.FC = () => {
               label: `${banco.nombre} (${banco.codigo})`
             })) || []}
             error={errors.bancoId?.message}
-            {...register('bancoId', { valueAsNumber: true })}
+            {...register('bancoId')}
           />
           
           <Input
@@ -318,7 +361,7 @@ const ChequerasPage: React.FC = () => {
             step="0.01"
             placeholder="0.00"
             error={errors.saldoInicial?.message}
-            {...register('saldoInicial', { valueAsNumber: true })}
+            {...register('saldoInicial')}
           />
           
           <div className="grid grid-cols-2 gap-4">
@@ -327,7 +370,7 @@ const ChequerasPage: React.FC = () => {
               type="number"
               placeholder="Ej: 1"
               error={errors.chequeDesde?.message}
-              {...register('chequeDesde', { valueAsNumber: true })}
+              {...register('chequeDesde')}
             />
             
             <Input
@@ -335,7 +378,7 @@ const ChequerasPage: React.FC = () => {
               type="number"
               placeholder="Ej: 100"
               error={errors.chequeHasta?.message}
-              {...register('chequeHasta', { valueAsNumber: true })}
+              {...register('chequeHasta')}
             />
           </div>
           

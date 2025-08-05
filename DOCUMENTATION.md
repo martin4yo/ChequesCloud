@@ -39,6 +39,16 @@
 - **Exportación a Excel** con filtros aplicados
 - **Función cobrar**: Marca cheques como cobrados con fecha
 
+### 5. Dashboard Ejecutivo
+- **Resumen estadístico**: Contador de bancos, chequeras, cheques totales y pendientes
+- **Tabla de vencimientos 7 días**: Vista matricial bancos × fechas con:
+  - Fechas dinámicas (hoy + 6 días siguientes)
+  - Cantidad de cheques y monto total por intersección banco-fecha
+  - Destacado visual para HOY y MAÑANA
+  - Compensación automática GMT-3 en fechas
+- **Actividad reciente**: Últimos cheques registrados
+- **Navegación rápida**: Accesos directos a todas las secciones principales
+
 ## 🎯 Problema de Fechas Resuelto
 
 ### Problema Original:
@@ -93,10 +103,29 @@ Las fechas se almacenaban con hora 00:00:00 y con GMT-3 se mostraba el día ante
 - **Búsqueda de texto** en múltiples campos
 - **Persistencia** de filtros durante la sesión
 
-### Exportación:
-- **Excel export** con filtros aplicados
-- Respeta búsquedas y filtros de fecha
-- Descarga automática del archivo
+### Exportación Avanzada a Excel:
+- **Archivo con 2 hojas**: Lista detallada + CashFlow
+- **Hoja 1 - Cheques**: Lista con subtotales por fecha de vencimiento
+- **Hoja 2 - CashFlow**: Tabla dinámica con fechas como filas y bancos como columnas
+- **Filtros aplicados**: Respeta todas las búsquedas y filtros activos
+- **Formato profesional**: Moneda, subtotales automáticos, filtros Excel
+- **Fórmulas incluidas**: Sumas automáticas y totales generales
+
+### Dashboard Inteligente:
+- **Estadísticas generales**: Total de bancos, chequeras, cheques y pendientes
+- **Vencimientos por Banco - Próximos 7 Días**: Vista matricial de vencimientos
+  - **Fechas dinámicas**: Desde hoy hasta 6 días adelante
+  - **Agrupación por banco**: Cada fila representa un banco
+  - **Información detallada**: Cantidad de cheques + monto total por día
+  - **Destacados visuales**: HOY (azul), MAÑANA (verde), otros días (neutral)
+  - **Compensación GMT-3**: Fechas ajustadas automáticamente (+1 día)
+  - **Responsive**: Scroll horizontal en pantallas pequeñas
+- **Cheques recientes**: Lista de últimos cheques registrados
+- **Acciones rápidas**: Navegación directa a secciones principales
+  - Agregar Banco → `/bancos`
+  - Nueva Chequera → `/chequeras` 
+  - Emitir Cheque → `/cheques`
+  - Exportar Datos → `/cheques`
 
 ### CORS (Cross-Origin Resource Sharing):
 - **Configuración universal**: Acepta solicitudes de cualquier origen
@@ -214,6 +243,8 @@ El backend acepta solicitudes desde:
 - **✅ Código limpio**: Sin archivos innecesarios, tipos correctos
 - **✅ Arquitectura sólida**: Separación de concerns, reutilización
 - **✅ CORS universal**: Acepta solicitudes de cualquier origen sin restricciones
+- **✅ Dashboard ejecutivo**: Vista de vencimientos 7 días + navegación rápida funcional
+- **✅ Tabla matricial avanzada**: Agrupación banco × fecha con destacados visuales
 
 **El proyecto está completamente funcional y listo para producción.**
 
@@ -232,9 +263,31 @@ El backend acepta solicitudes desde:
 - No se pueden eliminar chequeras que tengan cheques
 - Los rangos de cheques deben ser válidos (chequeHasta > chequeDesde)
 
-### Exportación Excel:
-- Respeta todos los filtros aplicados (fechas, búsqueda, banco, chequera)
-- Se genera con los datos visibles en la tabla actual
+### Exportación Excel Avanzada:
+- **Dos hojas de cálculo en un solo archivo**:
+  - **Hoja "Cheques"**: Lista completa con subtotales por fecha de vencimiento
+  - **Hoja "CashFlow"**: Tabla dinámica (fechas × bancos) con filtros automáticos
+- **Funcionalidades**:
+  - Subtotales automáticos por fecha de vencimiento
+  - Total general con fórmulas Excel
+  - Formato de moneda aplicado
+  - Filtros automáticos en la hoja CashFlow
+  - Respeta todos los filtros aplicados (fechas, búsqueda, banco, chequera)
+  - Fecha en formato DD/MM/YYYY
+- **Tecnología**: ExcelJS + Moment.js para formateo avanzado
+
+### Dashboard Vencimientos - Funcionalidad Avanzada:
+- **Vista Matricial**: Tabla banco × fecha para próximos 7 días
+- **Actualización en Tiempo Real**: Fechas se recalculan dinámicamente cada día
+- **Lógica de Consulta**: Una sola query para obtener vencimientos del rango completo
+- **Agrupación Inteligente**: Los datos se agrupan por banco y fecha en el frontend
+- **Manejo GMT-3**: Todas las fechas se ajustan con `addOneDayToDate()` para compensar zona horaria
+- **Diseño Responsive**: Scroll horizontal automático para pantallas pequeñas
+- **Estados Visuales**:
+  - **HOY**: Fondo azul (`bg-blue-50 border-blue-200`)
+  - **MAÑANA**: Fondo verde (`bg-green-50 border-green-200`)  
+  - **Otros días**: Sin destacado especial
+- **Formato de Datos**: Muestra "X cheque(s)" + monto en formato moneda argentina
 
 ### Configuración CORS:
 - **Ubicación**: `backend/src/app.ts` líneas 28-38
