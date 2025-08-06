@@ -12,7 +12,9 @@
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
       "Bash(npm run lint:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

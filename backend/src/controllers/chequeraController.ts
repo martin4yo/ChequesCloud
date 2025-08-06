@@ -8,10 +8,23 @@ export const getChequeras = asyncHandler(async (req: Request, res: Response) => 
   const { page = 1, limit = 10, search, bancoId, sortBy = 'numero', sortOrder = 'ASC' } = req.query as PaginationQuery & { bancoId?: string };
 
   const offset = (Number(page) - 1) * Number(limit);
-  const whereClause: any = {};
+  let whereClause: any = {};
+  const includeOptions: any = [
+    {
+      model: Banco,
+      as: 'banco',
+      attributes: ['id', 'nombre', 'codigo']
+    }
+  ];
 
   if (search) {
-    whereClause.numero = { [Op.like]: `%${search}%` };
+    // Buscar tanto en el número de chequera como en el nombre del banco usando subquery
+    whereClause[Op.or] = [
+      { numero: { [Op.like]: `%${search}%` } },
+      {
+        '$banco.nombre$': { [Op.like]: `%${search}%` }
+      }
+    ];
   }
 
   if (bancoId) {
@@ -20,16 +33,11 @@ export const getChequeras = asyncHandler(async (req: Request, res: Response) => 
 
   const { count, rows } = await Chequera.findAndCountAll({
     where: whereClause,
-    include: [
-      {
-        model: Banco,
-        as: 'banco',
-        attributes: ['id', 'nombre', 'codigo']
-      }
-    ],
+    include: includeOptions,
     limit: Number(limit),
     offset,
-    order: [[sortBy as string, sortOrder as string]]
+    order: [[sortBy as string, sortOrder as string]],
+    distinct: true // Para evitar duplicados en el count
   });
 
   const response: ApiResponse = {

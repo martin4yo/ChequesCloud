@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Trash2, CreditCard } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -57,7 +57,8 @@ const ChequerasPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingChequera, setEditingChequera] = useState<Chequera | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [page] = useState(1);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -68,6 +69,16 @@ const ChequerasPage: React.FC = () => {
 
   const { addNotification } = useUIStore();
   const queryClient = useQueryClient();
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // Reset page when search changes
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const {
     register,
@@ -89,8 +100,8 @@ const ChequerasPage: React.FC = () => {
 
   // Fetch chequeras
   const { data, isLoading } = useQuery({
-    queryKey: ['chequeras', { page, search: searchTerm }],
-    queryFn: () => chequeraService.getChequeras({ page, limit: 10, search: searchTerm }),
+    queryKey: ['chequeras', { page, search: debouncedSearchTerm }],
+    queryFn: () => chequeraService.getChequeras({ page, limit: 10, search: debouncedSearchTerm }),
   });
 
   // Fetch bancos for select
@@ -312,6 +323,11 @@ const ChequerasPage: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+              {searchTerm && searchTerm !== debouncedSearchTerm && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary-600 border-t-transparent rounded-full"></div>
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -323,6 +339,36 @@ const ChequerasPage: React.FC = () => {
             isLoading={isLoading}
             emptyMessage="No se encontraron chequeras"
           />
+          
+          {/* Paginación */}
+          {data && data.totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6 pt-4 border-t">
+              <p className="text-sm text-gray-600">
+                Mostrando {((page - 1) * 10) + 1} - {Math.min(page * 10, data.total)} de {data.total} chequeras
+              </p>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </Button>
+                <span className="flex items-center px-3 py-1 text-sm">
+                  Página {page} de {data.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === data.totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

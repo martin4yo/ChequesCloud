@@ -42,6 +42,7 @@ const ChequesPage: React.FC = () => {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [page, setPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -246,6 +247,7 @@ const ChequesPage: React.FC = () => {
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
       const blob = await chequeService.exportToExcel({
         estado: estadoFilter || undefined,
@@ -265,6 +267,8 @@ const ChequesPage: React.FC = () => {
         title: 'Error en exportación',
         message: 'No se pudo exportar los datos',
       });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -392,9 +396,9 @@ const ChequesPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Lista de Cheques</h2>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} isLoading={isExporting}>
             <Download className="h-4 w-4 mr-2" />
-            Exportar Excel
+            {isExporting ? 'Exportando...' : 'Exportar Excel'}
           </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />

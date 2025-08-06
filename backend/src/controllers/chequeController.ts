@@ -559,6 +559,7 @@ export const exportChequesToExcel = asyncHandler(async (req: Request, res: Respo
     let currentVencimiento: string | null = null;
     let startRowVencimiento = 2;
     let rowNumber = 1;
+    let totalGeneral = 0; // Variable para acumular el total
 
     // Agregar datos con subtotales
     cheques.forEach((cheque) => {
@@ -592,6 +593,9 @@ export const exportChequesToExcel = asyncHandler(async (req: Request, res: Respo
         startRowVencimiento = rowNumber;
       }
 
+      // Sumar al total general
+      totalGeneral += Number(cheque.monto);
+
       // Agregar fila de datos
       worksheet.addRow({
         id: cheque.id,
@@ -622,11 +626,11 @@ export const exportChequesToExcel = asyncHandler(async (req: Request, res: Respo
     worksheet.getRow(1).font = { bold: true };
     const lastRow = worksheet.rowCount;
 
-    // Total general
+    // Total general (usar valor calculado, no fórmula)
     if (lastRow > 1) {
       const totalRow = worksheet.addRow({
         fechaVencimiento: "TOTAL GENERAL:",
-        importe: { formula: `SUMIF(F:F,"<>Subtotal*",G:G)` }
+        importe: Number(totalGeneral.toFixed(2))
       });
       totalRow.font = { bold: true, size: 12 };
       totalRow.getCell('G').border = {
@@ -645,86 +649,65 @@ export const exportChequesToExcel = asyncHandler(async (req: Request, res: Respo
     if (cashFlow.length > 0) {
       // Obtener headers dinámicamente
       const headers = Object.keys(cashFlow[0]);
+      const bancoHeaders = headers.filter(h => h !== 'Vencimiento');
 
-      // Definir columnas
-      dynamicTable.columns = headers.map(header => ({
+      // Definir columnas incluyendo la columna "Total"
+      const allHeaders = [...headers, 'Total'];
+      dynamicTable.columns = allHeaders.map(header => ({
         header: header,
         key: header,
         width: header === 'Vencimiento' ? 15 : 20
       }));
 
-      // Agregar datos con +1 día a las fechas
+      // Agregar datos con +1 día a las fechas y calcular totales por fila
       cashFlow.forEach(row => {
         if (row.Vencimiento) {
           row.Vencimiento = moment(row.Vencimiento).add(1, 'day').format("DD/MM/YYYY");
         }
+        
+        // Calcular total por fila
+        let totalFila = 0;
+        bancoHeaders.forEach(banco => {
+          totalFila += parseFloat(row[banco]) || 0;
+        });
+        row.Total = totalFila;
+        
         dynamicTable.addRow(row);
       });
-
-      // Agregar columna "Total" para suma por fila
-      const bancoHeaders = headers.filter(h => h !== 'Vencimiento');
-      
-      // Agregar header "Total" 
-      dynamicTable.getColumn(headers.length + 1).header = 'Total';
-      dynamicTable.getColumn(headers.length + 1).width = 20;
-      
-      // Agregar fórmulas de suma por fila
-      dynamicTable.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) {
-          // Header row - ya agregado arriba
-          return;
-        }
-        
-        // Calcular rango de columnas para la suma (desde B hasta la penúltima columna)
-        const startCol = String.fromCharCode(66); // B
-        const endCol = String.fromCharCode(65 + bancoHeaders.length); // Última columna de banco
-        row.getCell(headers.length + 1).value = { 
-          formula: `SUM(${startCol}${rowNumber}:${endCol}${rowNumber})` 
-        };
-      });
-
       // Agregar fila de totales por columna
       const totalRowData: any = { Vencimiento: 'TOTAL' };
       
-      // Agregar fórmulas de suma por columna
+      // Agregar fórmulas de suma por columna para cada banco
       bancoHeaders.forEach((banco, index) => {
         const colLetter = String.fromCharCode(66 + index); // B, C, D, etc.
         const lastDataRow = dynamicTable.rowCount;
         totalRowData[banco] = { formula: `SUM(${colLetter}2:${colLetter}${lastDataRow})` };
       });
       
-      // Total general (suma de todos los bancos)
-      const startColTotal = String.fromCharCode(66); // B
-      const endColTotal = String.fromCharCode(65 + bancoHeaders.length); // Última columna de banco
-      const totalRowNumber = dynamicTable.rowCount + 1;
-      totalRowData['Total'] = { formula: `SUM(${startColTotal}${totalRowNumber}:${endColTotal}${totalRowNumber})` };
+      // Total general (suma de toda la columna Total)
+      const totalColLetter = String.fromCharCode(66 + bancoHeaders.length); // Columna Total
+      const lastDataRow = dynamicTable.rowCount;
+      totalRowData['Total'] = { formula: `SUM(${totalColLetter}2:${totalColLetter}${lastDataRow})` };
       
       const totalRow = dynamicTable.addRow(totalRowData);
       totalRow.font = { bold: true };
       
-      // Aplicar formato de moneda a la columna Total
-      dynamicTable.getColumn(headers.length + 1).eachCell((cell, rowNumber) => {
-        if (rowNumber > 1) { // Saltar header
-          cell.numFmt = '[Black]#,##0.00;[Red]-#,##0.00;;';
-        }
-      });
-
       // Estilizar headers
       dynamicTable.getRow(1).font = { bold: true };
 
-      // Formato de moneda para columnas de bancos (desde la segunda columna)
+      // Formato de moneda para columnas de bancos y Total (desde la segunda columna)
       dynamicTable.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Saltar headers
 
         row.eachCell((cell, colNumber) => {
-          if (colNumber > 1) { // Aplicar formato desde la segunda columna
+          if (colNumber > 1) { // Aplicar formato desde la segunda columna (bancos y Total)
             cell.numFmt = '[Black]#,##0.00;[Red]-#,##0.00;;';
           }
         });
       });
 
       // Agregar filtro (incluyendo la columna Total)
-      const headerRange = `A1:${String.fromCharCode(65 + headers.length)}1`;
+      const headerRange = `A1:${String.fromCharCode(65 + allHeaders.length)}1`;
       dynamicTable.autoFilter = headerRange;
     }
 
