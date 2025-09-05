@@ -86,11 +86,21 @@ export function dateStringToInputValue(dateString: string): string {
   return `${year}-${month}-${day}`;
 }
 
-export function addOneDayToDate(dateString: string): string {
+export function addOneDayToDate(dateString: string | null | undefined): string {
   // Add one day to a YYYY-MM-DD date string
-  if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+  if (!dateString || typeof dateString !== 'string') {
+    return '';
+  }
+  
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
     date.setDate(date.getDate() + 1);
     
     const newYear = date.getFullYear();
@@ -116,16 +126,31 @@ export function subtractOneDayFromDate(dateString: string): string {
   return dateString;
 }
 
-export function formatDatePlusOneDay(date: string | Date): string {
+export function formatDatePlusOneDay(date: string | Date | null | undefined): string {
+  if (!date) return '-';
+  
   if (typeof date === 'string') {
     // Add one day before formatting
     const adjustedDate = addOneDayToDate(date);
+    
+    // If addOneDayToDate returns empty string, return '-'
+    if (!adjustedDate) return '-';
+    
     const [year, month, day] = adjustedDate.split('-').map(Number);
+    
+    // Additional validation
+    if (!year || !month || !day) return '-';
+    
+    const dateObj = new Date(year, month - 1, day);
+    
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) return '-';
+    
     return new Intl.DateTimeFormat('es-AR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    }).format(new Date(year, month - 1, day));
+    }).format(dateObj);
   }
   
   return new Intl.DateTimeFormat('es-AR', {

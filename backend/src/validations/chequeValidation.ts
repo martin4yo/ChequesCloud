@@ -21,9 +21,11 @@ export const chequeSchema = Joi.object({
       'any.required': 'El ID de la chequera es requerido'
     }),
   fechaEmision: Joi.date()
+    .min('now')
     .required()
     .messages({
       'date.base': 'La fecha de emisión debe ser una fecha válida',
+      'date.min': 'La fecha de emisión debe ser a partir de mañana',
       'any.required': 'La fecha de emisión es requerida'
     }),
   fechaVencimiento: Joi.date()

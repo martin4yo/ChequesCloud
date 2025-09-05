@@ -26,6 +26,14 @@ const chequeSchema = z.object({
   concepto: z.string().min(2, 'El concepto debe tener al menos 2 caracteres'),
   monto: z.number().positive('El monto debe ser positivo'),
   estado: z.enum(['PENDIENTE', 'COBRADO', 'ANULADO']),
+}).refine((data) => {
+  const fechaEmision = new Date(data.fechaEmision);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return fechaEmision > today;
+}, {
+  message: "La fecha de emisión debe ser a partir de mañana",
+  path: ["fechaEmision"],
 }).refine((data) => new Date(data.fechaVencimiento) >= new Date(data.fechaEmision), {
   message: "La fecha de vencimiento debe ser posterior a la fecha de emisión",
   path: ["fechaVencimiento"],
@@ -333,8 +341,8 @@ const ChequesPage: React.FC = () => {
       ),
     },
     {
-      key: 'fechaEmision',
-      header: 'F. Emisión',
+      key: 'fechaCobro',
+      header: 'F. Cobro',
       render: (value: string) => formatDatePlusOneDay(value),
     },
     {

@@ -383,9 +383,27 @@ export const marcarComoCobrado = asyncHandler(async (req: Request, res: Response
     saldoActual: cheque.chequera!.saldoActual - cheque.monto
   });
 
+  // Get updated cheque with all details
+  const updatedCheque = await Cheque.findByPk(id, {
+    include: [
+      {
+        model: Chequera,
+        as: 'chequera',
+        attributes: ['id', 'numero'],
+        include: [
+          {
+            model: Banco,
+            as: 'banco',
+            attributes: ['id', 'nombre', 'codigo']
+          }
+        ]
+      }
+    ]
+  });
+
   const response: ApiResponse = {
     success: true,
-    data: cheque,
+    data: updatedCheque,
     message: 'Cheque marcado como cobrado'
   };
 
