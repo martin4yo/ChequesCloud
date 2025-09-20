@@ -9,8 +9,8 @@ class Cheque extends Model<ChequeInterface, ChequeCreationAttributes> implements
   public id!: number;
   public numero!: string;
   public chequeraId!: number;
-  public fechaEmision!: string; // DATEONLY field returns string
-  public fechaVencimiento!: string; // DATEONLY field returns string
+  public fechaEmision!: Date; // DATETIME field returns Date
+  public fechaVencimiento!: Date; // DATETIME field returns Date
   public beneficiario!: string;
   public concepto!: string;
   public monto!: number;
@@ -45,23 +45,19 @@ Cheque.init(
       },
     },
     fechaEmision: {
-      // type: DataTypes.DATEONLY,
-      // allowNull: false,
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false,
       get() {
         const rawValue = this.getDataValue('fechaEmision');
-        return rawValue;
+        return rawValue; // Return as Date object (UTC)
       }
     },
     fechaVencimiento: {
-      // type: DataTypes.DATEONLY,
-      // allowNull: false,
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false,
       get() {
         const rawValue = this.getDataValue('fechaVencimiento');
-        return rawValue;
+        return rawValue; // Return as Date object (UTC)
       }
     },
     beneficiario: {

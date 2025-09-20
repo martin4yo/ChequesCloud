@@ -1,22 +1,27 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Building2, 
-  CreditCard, 
-  FileText, 
+import {
+  Building2,
+  CreditCard,
+  FileText,
   DollarSign,
   TrendingUp,
-  Calendar
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import Button from '../components/ui/Button';
 import { bancoService } from '../services/bancoService';
 import { chequeraService } from '../services/chequeraService';
 import { chequeService } from '../services/chequeService';
-import { formatCurrency, addOneDayToDate } from '../lib/utils';
+import { formatCurrency } from '../lib/utils';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const [dayOffset, setDayOffset] = React.useState(0);
 
   // Fetch dashboard data
   const { data: bancosData } = useQuery({
@@ -39,30 +44,35 @@ const DashboardPage: React.FC = () => {
     queryFn: () => chequeService.getCheques({ estado: 'PENDIENTE', limit: 1 }),
   });
 
-  // Get date range for next 7 days
-  const today = new Date().toISOString().split('T')[0];
-  const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  // Get date range for 7 days based on offset
+  const baseDate = new Date(Date.now() + dayOffset * 24 * 60 * 60 * 1000);
+  const today = baseDate.toISOString().split('T')[0];
+  const sevenDaysFromBase = new Date(baseDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  // Generate array of next 7 days
+  // Generate array of 7 days from base date
   const next7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+    const date = new Date(baseDate.getTime() + i * 24 * 60 * 60 * 1000);
+    const actualToday = new Date();
+    const isActualToday = date.toDateString() === actualToday.toDateString();
+    const isActualTomorrow = date.toDateString() === new Date(actualToday.getTime() + 24 * 60 * 60 * 1000).toDateString();
+
     return {
       dateString: date.toISOString().split('T')[0],
       displayDate: date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
       dayName: date.toLocaleDateString('es-ES', { weekday: 'short' }),
-      isToday: i === 0,
-      isTomorrow: i === 1
+      isToday: isActualToday,
+      isTomorrow: isActualTomorrow
     };
   });
 
-  // Fetch expirations for next 7 days
+  // Fetch expirations for the 7-day range
   const { data: expirationsNext7Days } = useQuery({
-    queryKey: ['cheques', { fechaDesde: today, fechaHasta: sevenDaysFromNow, estado: 'PENDIENTE' }],
-    queryFn: () => chequeService.getCheques({ 
-      fechaDesde: today, 
-      fechaHasta: sevenDaysFromNow, 
+    queryKey: ['cheques', { fechaDesde: today, fechaHasta: sevenDaysFromBase, estado: 'PENDIENTE', dayOffset }],
+    queryFn: () => chequeService.getCheques({
+      fechaDesde: today,
+      fechaHasta: sevenDaysFromBase,
       estado: 'PENDIENTE',
-      limit: 500 
+      limit: 500
     }),
   });
 
@@ -76,40 +86,93 @@ const DashboardPage: React.FC = () => {
     }
   }
 
+  // Navigate to cheques with date filter
+  const handleNavigateToDate = (date: string) => {
+    // With Prisma, no need for date adjustments
+    navigate(`/cheques?fechaDesde=${date}&fechaHasta=${date}`);
+  };
+
+  // Navigate to cheques with date and bank filter
+  const handleNavigateToBankAndDate = (date: string, bancoId?: string) => {
+    const params = new URLSearchParams({
+      fechaDesde: date,
+      fechaHasta: date
+    });
+
+    if (bancoId) {
+      params.append('bancoId', bancoId);
+    }
+
+    navigate(`/cheques?${params.toString()}`);
+  };
+
+  // Create a mapping of bank names to bank IDs
+  const createBankNameToIdMap = (cheques: any[]) => {
+    if (!cheques) return {};
+
+    const bankMap: { [bankName: string]: string } = {};
+    cheques.forEach((cheque: any) => {
+      const bankName = cheque.chequera?.banco?.nombre || 'Sin banco';
+      const bankId = cheque.chequera?.banco?.id;
+      if (bankId && !bankMap[bankName]) {
+        bankMap[bankName] = bankId.toString();
+      }
+    });
+    return bankMap;
+  };
+
   // Group expirations by bank and date
   const groupExpirationsByBankAndDate = (cheques: any[]): ExpirationsByBankAndDate => {
     if (!cheques) return {};
-    
+
     return cheques.reduce((acc: ExpirationsByBankAndDate, cheque: any) => {
       const bankName = cheque.chequera?.banco?.nombre || 'Sin banco';
-      // Normalize date format and add one day for GMT-3 compensation
+      // Normalize date format - with Prisma, no timezone compensation needed
       let dateString = cheque.fechaVencimiento;
       if (dateString && dateString.includes('T')) {
         dateString = dateString.split('T')[0]; // Remove time part if present
       }
-      // Add one day to compensate for GMT-3 timezone issue
-      dateString = addOneDayToDate(dateString);
-      
+
       if (!acc[bankName]) {
         acc[bankName] = {};
       }
-      
+
       if (!acc[bankName][dateString]) {
         acc[bankName][dateString] = {
           count: 0,
           total: 0
         };
       }
-      
+
       acc[bankName][dateString].count += 1;
       acc[bankName][dateString].total += Number(cheque.monto);
-      
+
       return acc;
     }, {});
   };
 
   const expirationsGrouped = groupExpirationsByBankAndDate(expirationsNext7Days?.data || []);
+  const bankNameToIdMap = createBankNameToIdMap(expirationsNext7Days?.data || []);
   const allBanks = Object.keys(expirationsGrouped);
+
+  // Calculate daily totals across all banks
+  const calculateDailyTotals = () => {
+    const dailyTotals: { [date: string]: { count: number; total: number } } = {};
+
+    Object.values(expirationsGrouped).forEach((bankData: any) => {
+      Object.entries(bankData).forEach(([date, dayData]: [string, any]) => {
+        if (!dailyTotals[date]) {
+          dailyTotals[date] = { count: 0, total: 0 };
+        }
+        dailyTotals[date].count += dayData.count;
+        dailyTotals[date].total += dayData.total;
+      });
+    });
+
+    return dailyTotals;
+  };
+
+  const dailyTotals = calculateDailyTotals();
 
   const stats = [
     {
@@ -172,10 +235,49 @@ const DashboardPage: React.FC = () => {
       <div className="mb-8">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Vencimientos por Banco - Próximos 7 Días
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Vencimientos por Banco - Próximos 7 Días
+                {dayOffset !== 0 && (
+                  <span className="ml-2 text-sm font-normal text-gray-500">
+                    ({dayOffset > 0 ? `+${dayOffset}` : dayOffset} día{Math.abs(dayOffset) !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </CardTitle>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDayOffset(prev => prev - 1)}
+                  title="Ver días anteriores"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDayOffset(0)}
+                  disabled={dayOffset === 0}
+                  title="Volver a hoy"
+                  className="px-3"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDayOffset(prev => prev + 1)}
+                  title="Ver días siguientes"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -184,7 +286,7 @@ const DashboardPage: React.FC = () => {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-3 font-medium text-gray-900 min-w-[120px]">Banco</th>
                     {next7Days.map((day) => (
-                      <th key={day.dateString} className="text-center py-3 px-2 font-medium text-gray-900 min-w-[90px]">
+                      <th key={day.dateString} className="text-center py-3 px-3 font-medium text-gray-900 min-w-[110px]">
                         <div className="flex flex-col">
                           <span className={`text-xs ${day.isToday ? 'text-blue-600 font-bold' : day.isTomorrow ? 'text-green-600 font-semibold' : 'text-gray-600'}`}>
                             {day.dayName}
@@ -204,16 +306,20 @@ const DashboardPage: React.FC = () => {
                       {next7Days.map((day) => {
                         const dayData = expirationsGrouped[banco]?.[day.dateString];
                         return (
-                          <td key={day.dateString} className="py-3 px-2 text-center">
+                          <td key={day.dateString} className="py-3 px-3 text-center">
                             {dayData ? (
-                              <div className={`${day.isToday ? 'bg-blue-50 border border-blue-200 rounded-lg p-1' : day.isTomorrow ? 'bg-green-50 border border-green-200 rounded-lg p-1' : ''}`}>
+                              <button
+                                onClick={() => handleNavigateToBankAndDate(day.dateString, bankNameToIdMap[banco])}
+                                className={`w-full transition-all duration-200 hover:scale-105 ${day.isToday ? 'bg-blue-50 border border-blue-200 rounded-lg p-1 hover:bg-blue-100' : day.isTomorrow ? 'bg-green-50 border border-green-200 rounded-lg p-1 hover:bg-green-100' : 'p-1 hover:bg-gray-100 rounded-lg'}`}
+                                title={`Click para ver cheques de ${banco} que vencen el ${day.displayDate}`}
+                              >
                                 <div className={`text-sm font-medium ${day.isToday ? 'text-blue-900' : day.isTomorrow ? 'text-green-900' : 'text-gray-900'}`}>
                                   {dayData.count} cheque{dayData.count !== 1 ? 's' : ''}
                                 </div>
                                 <div className={`text-xs ${day.isToday ? 'text-blue-700' : day.isTomorrow ? 'text-green-700' : 'text-gray-600'}`}>
                                   {formatCurrency(dayData.total)}
                                 </div>
-                              </div>
+                              </button>
                             ) : (
                               <span className="text-gray-300 text-sm">-</span>
                             )}
@@ -221,7 +327,39 @@ const DashboardPage: React.FC = () => {
                         );
                       })}
                     </tr>
-                  )) : (
+                  )) : null}
+
+                  {/* Fila de totales por día */}
+                  {allBanks.length > 0 && (
+                    <tr className="border-t-2 border-gray-300 bg-gray-50 font-bold">
+                      <td className="py-3 px-3 font-bold text-gray-900">TOTAL</td>
+                      {next7Days.map((day) => {
+                        const dayData = dailyTotals[day.dateString];
+                        return (
+                          <td key={day.dateString} className="py-3 px-3 text-center">
+                            {dayData ? (
+                              <button
+                                onClick={() => handleNavigateToDate(day.dateString)}
+                                className={`w-full transition-all duration-200 hover:scale-105 ${day.isToday ? 'bg-blue-100 border border-blue-300 rounded-lg p-1 hover:bg-blue-200' : day.isTomorrow ? 'bg-green-100 border border-green-300 rounded-lg p-1 hover:bg-green-200' : 'p-1 hover:bg-gray-200 rounded-lg'}`}
+                                title={`Click para ver todos los cheques que vencen el ${day.displayDate}`}
+                              >
+                                <div className={`text-sm font-bold ${day.isToday ? 'text-blue-900' : day.isTomorrow ? 'text-green-900' : 'text-gray-900'}`}>
+                                  {dayData.count} cheque{dayData.count !== 1 ? 's' : ''}
+                                </div>
+                                <div className={`text-xs font-semibold ${day.isToday ? 'text-blue-800' : day.isTomorrow ? 'text-green-800' : 'text-gray-700'}`}>
+                                  {formatCurrency(dayData.total)}
+                                </div>
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-sm font-bold">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )}
+
+                  {allBanks.length === 0 && (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-gray-500">
                         No hay cheques pendientes que venzan en los próximos 7 días

@@ -128,34 +128,84 @@ export function subtractOneDayFromDate(dateString: string): string {
 
 export function formatDatePlusOneDay(date: string | Date | null | undefined): string {
   if (!date) return '-';
-  
+
   if (typeof date === 'string') {
     // Add one day before formatting
     const adjustedDate = addOneDayToDate(date);
-    
+
     // If addOneDayToDate returns empty string, return '-'
     if (!adjustedDate) return '-';
-    
+
     const [year, month, day] = adjustedDate.split('-').map(Number);
-    
+
     // Additional validation
     if (!year || !month || !day) return '-';
-    
+
     const dateObj = new Date(year, month - 1, day);
-    
+
     // Check if date is valid
     if (isNaN(dateObj.getTime())) return '-';
-    
+
     return new Intl.DateTimeFormat('es-AR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     }).format(dateObj);
   }
-  
+
   return new Intl.DateTimeFormat('es-AR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).format(date);
+}
+
+export function formatDateTimePlusOneDay(dateTime: string | Date | null | undefined): string {
+  if (!dateTime) return '-';
+
+  // For datetime values (fechaCobro), format as date without the +1 day adjustment
+  // because these are actual timestamps, not date-only fields
+  const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime;
+
+  if (isNaN(date.getTime())) return '-';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+// Nueva implementación con UTC 00:00:00
+export function dateToUTC(dateString: string): string {
+  // Convierte una fecha local YYYY-MM-DD a UTC 00:00:00
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  return date.toISOString();
+}
+
+export function utcToLocalDate(utcString: string): string {
+  // Convierte una fecha UTC de vuelta a formato local YYYY-MM-DD
+  const date = new Date(utcString);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function formatUTCDate(utcString: string | null | undefined): string {
+  if (!utcString) return '-';
+
+  try {
+    const date = new Date(utcString);
+    // Extraer componentes UTC directamente y formatear manualmente
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // +1 porque getUTCMonth es 0-based
+    const day = String(date.getUTCDate()).padStart(2, '0');
+
+    // Formatear directamente sin usar DateTimeFormat para evitar conversiones de zona horaria
+    return `${day}/${month}/${year}`;
+  } catch {
+    return '-';
+  }
 }

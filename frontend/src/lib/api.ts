@@ -51,7 +51,17 @@ export const apiRequest = async <T>(
   config?: AxiosRequestConfig
 ): Promise<ApiResponse<T>> => {
   console.log(`📡 API Request: ${method} ${API_BASE_URL}${url}`, data ? { data } : '');
-  
+
+  // Debug para ver parámetros de query
+  if (config?.params) {
+    console.log('🔗 Query params siendo enviados:', config.params);
+    if (config.params.fechaDesde || config.params.fechaHasta) {
+      console.log('📅 FECHAS EN PARAMS:');
+      console.log('  fechaDesde:', config.params.fechaDesde, typeof config.params.fechaDesde);
+      console.log('  fechaHasta:', config.params.fechaHasta, typeof config.params.fechaHasta);
+    }
+  }
+
   try {
     const response = await api.request<ApiResponse<T>>({
       method,

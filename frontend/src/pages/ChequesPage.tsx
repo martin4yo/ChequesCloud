@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, FileText, Download, DollarSign } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { chequeService } from '../services/chequeService';
 import { chequeraService } from '../services/chequeraService';
+import { bancoService } from '../services/bancoService';
 import { useUIStore } from '../store/uiStore';
 import type { Cheque, ChequeInput } from '../types';
 import Button from '../components/ui/Button';
@@ -15,7 +17,7 @@ import Modal from '../components/ui/Modal';
 import Table from '../components/ui/Table';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
-import { formatCurrency, formatDatePlusOneDay, downloadBlob, dateStringToInputValue, addOneDayToDate, subtractOneDayFromDate } from '../lib/utils';
+import { formatCurrency, formatUTCDate, formatDateTimePlusOneDay, downloadBlob, dateToUTC, utcToLocalDate } from '../lib/utils';
 
 const chequeSchema = z.object({
   numero: z.string().min(1, 'El número es requerido'),
@@ -26,15 +28,7 @@ const chequeSchema = z.object({
   concepto: z.string().min(2, 'El concepto debe tener al menos 2 caracteres'),
   monto: z.number().positive('El monto debe ser positivo'),
   estado: z.enum(['PENDIENTE', 'COBRADO', 'ANULADO']),
-}).refine((data) => {
-  const fechaEmision = new Date(data.fechaEmision);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return fechaEmision > today;
-}, {
-  message: "La fecha de emisión debe ser a partir de mañana",
-  path: ["fechaEmision"],
-}).refine((data) => new Date(data.fechaVencimiento) >= new Date(data.fechaEmision), {
+}).refine((data) => new Date(data.fechaVencimiento) > new Date(data.fechaEmision), {
   message: "La fecha de vencimiento debe ser posterior a la fecha de emisión",
   path: ["fechaVencimiento"],
 });
@@ -42,13 +36,15 @@ const chequeSchema = z.object({
 type ChequeFormData = z.infer<typeof chequeSchema>;
 
 const ChequesPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCheque, setEditingCheque] = useState<Cheque | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [bancoFilter, setBancoFilter] = useState(searchParams.get('bancoId') || '');
+  const [fechaDesde, setFechaDesde] = useState(searchParams.get('fechaDesde') || '');
+  const [fechaHasta, setFechaHasta] = useState(searchParams.get('fechaHasta') || '');
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -75,7 +71,7 @@ const ChequesPage: React.FC = () => {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [estadoFilter, fechaDesde, fechaHasta]);
+  }, [estadoFilter, bancoFilter, fechaDesde, fechaHasta]);
 
   const {
     register,
@@ -94,21 +90,35 @@ const ChequesPage: React.FC = () => {
 
   // Fetch cheques
   const { data, isLoading } = useQuery({
-    queryKey: ['cheques', { page, search: debouncedSearchTerm, estado: estadoFilter, fechaDesde, fechaHasta }],
-    queryFn: () => chequeService.getCheques({ 
-      page, 
-      limit: 10, 
-      search: debouncedSearchTerm,
-      estado: estadoFilter || undefined,
-      fechaDesde: fechaDesde || undefined,
-      fechaHasta: fechaHasta || undefined
-    }),
+    queryKey: ['cheques', { page, search: debouncedSearchTerm, estado: estadoFilter, banco: bancoFilter, fechaDesde, fechaHasta }],
+    queryFn: () => {
+      // Debug: Ver qué fechas se están enviando al backend
+      console.log('🔍 FRONTEND DEBUG - Enviando al backend:');
+      console.log('📅 fechaDesde (frontend state):', fechaDesde);
+      console.log('📅 fechaHasta (frontend state):', fechaHasta);
+
+      return chequeService.getCheques({
+        page,
+        limit: 10,
+        search: debouncedSearchTerm,
+        estado: estadoFilter || undefined,
+        bancoId: bancoFilter || undefined,
+        fechaDesde: fechaDesde || undefined,
+        fechaHasta: fechaHasta || undefined
+      });
+    },
   });
 
   // Fetch chequeras for select
   const { data: chequerasData } = useQuery({
     queryKey: ['chequeras-activas'],
     queryFn: () => chequeraService.getChequerasActivas(),
+  });
+
+  // Fetch bancos for filter
+  const { data: bancosData } = useQuery({
+    queryKey: ['bancos'],
+    queryFn: () => bancoService.getBancos(),
   });
 
   // Create mutation
@@ -219,8 +229,8 @@ const ChequesPage: React.FC = () => {
     setEditingCheque(cheque);
     setValue('numero', cheque.numero);
     setValue('chequeraId', cheque.chequeraId);
-    setValue('fechaEmision', addOneDayToDate(dateStringToInputValue(cheque.fechaEmision)));
-    setValue('fechaVencimiento', addOneDayToDate(dateStringToInputValue(cheque.fechaVencimiento)));
+    setValue('fechaEmision', utcToLocalDate(cheque.fechaEmision));
+    setValue('fechaVencimiento', utcToLocalDate(cheque.fechaVencimiento));
     setValue('beneficiario', cheque.beneficiario);
     setValue('concepto', cheque.concepto);
     setValue('monto', cheque.monto);
@@ -259,6 +269,7 @@ const ChequesPage: React.FC = () => {
     try {
       const blob = await chequeService.exportToExcel({
         estado: estadoFilter || undefined,
+        bancoId: bancoFilter || undefined,
         fechaDesde: fechaDesde || undefined,
         fechaHasta: fechaHasta || undefined,
         search: debouncedSearchTerm || undefined
@@ -280,17 +291,32 @@ const ChequesPage: React.FC = () => {
     }
   };
 
+  // Helper function to check if a cheque can be marked as paid
+  const canMarkAsPaid = (cheque: Cheque): boolean => {
+    if (cheque.estado !== 'PENDIENTE') return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Convert UTC date from backend to local date for comparison
+    const fechaVencimiento = new Date(cheque.fechaVencimiento);
+
+    // Debug logs
+    console.log('🔍 Validando cobro para cheque:', cheque.numero);
+    console.log('📅 Fecha UTC backend:', cheque.fechaVencimiento);
+    console.log('📅 Fecha local mostrada:', fechaVencimiento.toLocaleDateString());
+    console.log('📅 Hoy:', today.toLocaleDateString());
+    console.log('✅ Puede cobrarse?:', fechaVencimiento < today);
+
+    // Only allow if vencimiento is BEFORE today
+    return fechaVencimiento < today;
+  };
+
   const onSubmit = async (data: ChequeFormData) => {
+    // No need for date adjustments with UTC - send dates as-is
     if (editingCheque) {
-      // For editing: subtract one day to compensate for the +1 day added in handleEdit
-      const adjustedData = {
-        ...data,
-        fechaEmision: subtractOneDayFromDate(data.fechaEmision),
-        fechaVencimiento: subtractOneDayFromDate(data.fechaVencimiento),
-      };
-      updateMutation.mutate({ id: editingCheque.id, data: adjustedData });
+      updateMutation.mutate({ id: editingCheque.id, data });
     } else {
-      // For creating: send dates as-is (no adjustment)
       createMutation.mutate(data);
     }
   };
@@ -341,14 +367,19 @@ const ChequesPage: React.FC = () => {
       ),
     },
     {
-      key: 'fechaCobro',
-      header: 'F. Cobro',
-      render: (value: string) => formatDatePlusOneDay(value),
+      key: 'fechaEmision',
+      header: 'F. Emisión',
+      render: (value: string) => formatUTCDate(value),
     },
     {
       key: 'fechaVencimiento',
       header: 'F. Vencimiento',
-      render: (value: string) => formatDatePlusOneDay(value),
+      render: (value: string) => formatUTCDate(value),
+    },
+    {
+      key: 'fechaCobro',
+      header: 'F. Cobro',
+      render: (value: string) => formatDateTimePlusOneDay(value),
     },
     {
       key: 'estado',
@@ -370,12 +401,23 @@ const ChequesPage: React.FC = () => {
       header: 'Acciones',
       render: (_: any, row: Cheque) => (
         <div className="flex space-x-2">
-          {row.estado === 'PENDIENTE' && (
+          {canMarkAsPaid(row) && (
             <Button
               size="sm"
               variant="ghost"
               onClick={() => handleMarkAsPaid(row.id)}
               title="Marcar como cobrado"
+            >
+              <DollarSign className="h-4 w-4" />
+            </Button>
+          )}
+          {row.estado === 'PENDIENTE' && !canMarkAsPaid(row) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled
+              title="No se puede cobrar: fecha de vencimiento futura"
+              className="opacity-50 cursor-not-allowed"
             >
               <DollarSign className="h-4 w-4" />
             </Button>
@@ -446,43 +488,141 @@ const ChequesPage: React.FC = () => {
                 value={estadoFilter}
                 onChange={(e) => setEstadoFilter(e.target.value)}
               />
+
+              <Select
+                placeholder="Filtrar por banco"
+                options={[
+                  { value: '', label: 'Todos los bancos' },
+                  ...(bancosData?.data || []).map((banco: any) => ({
+                    value: banco.id.toString(),
+                    label: banco.nombre,
+                  })),
+                ]}
+                value={bancoFilter}
+                onChange={(e) => setBancoFilter(e.target.value)}
+              />
             </div>
             
-            {/* Fila 2: Filtros de fecha de vencimiento */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Vence desde:</label>
-                <Input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => setFechaDesde(e.target.value)}
-                  className="w-40"
-                />
+            {/* Fila 2: Filtros de fecha de vencimiento y Total */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Vence desde:</label>
+                  <Input
+                    type="date"
+                    value={fechaDesde}
+                    onChange={(e) => {
+                      setFechaDesde(e.target.value);
+                    }}
+                    className="w-40"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Vence hasta:</label>
+                  <Input
+                    type="date"
+                    value={fechaHasta}
+                    onChange={(e) => {
+                      setFechaHasta(e.target.value);
+                    }}
+                    className="w-40"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFechaDesde('');
+                    setFechaHasta('');
+                  }}
+                  className="whitespace-nowrap"
+                >
+                  Limpiar fechas
+                </Button>
               </div>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Vence hasta:</label>
-                <Input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => setFechaHasta(e.target.value)}
-                  className="w-40"
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setFechaDesde('');
-                  setFechaHasta('');
-                }}
-                className="whitespace-nowrap"
-              >
-                Limpiar fechas
-              </Button>
+
+              {/* Indicadores de totales */}
+              {data && (
+                <div className="flex space-x-3">
+                  {/* Si tenemos totales del backend, usarlos; sino calcular de la página actual */}
+                  {data.totales ? (
+                    <>
+                      {/* Total General */}
+                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="text-center">
+                          <div className="text-xs font-medium opacity-90">Total ({data.total} cheques)</div>
+                          <div className="text-lg font-bold">{formatCurrency(data.totales.total)}</div>
+                        </div>
+                      </div>
+
+                      {/* Pendientes */}
+                      <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="text-center">
+                          <div className="text-xs font-medium opacity-90">Pendiente</div>
+                          <div className="text-lg font-bold">{formatCurrency(data.totales.pendiente)}</div>
+                        </div>
+                      </div>
+
+                      {/* Cobrados */}
+                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="text-center">
+                          <div className="text-xs font-medium opacity-90">Cobrado</div>
+                          <div className="text-lg font-bold">{formatCurrency(data.totales.cobrado)}</div>
+                        </div>
+                      </div>
+
+                      {/* Anulados (solo si hay) */}
+                      {data.totales.anulado > 0 && (
+                        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                          <div className="text-center">
+                            <div className="text-xs font-medium opacity-90">Anulado</div>
+                            <div className="text-lg font-bold">{formatCurrency(data.totales.anulado)}</div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Fallback: calcular de la página actual */}
+                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="text-center">
+                          <div className="text-xs font-medium opacity-90">Total ({data.total} cheques)</div>
+                          <div className="text-lg font-bold">
+                            {formatCurrency(data.data.reduce((sum: number, cheque: Cheque) => sum + Number(cheque.monto), 0))}
+                          </div>
+                          <div className="text-xs opacity-75">*Solo página actual</div>
+                        </div>
+                      </div>
+
+                      {/* Pendientes de la página */}
+                      <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="text-center">
+                          <div className="text-xs font-medium opacity-90">Pendiente</div>
+                          <div className="text-lg font-bold">
+                            {formatCurrency(data.data.filter(c => c.estado === 'PENDIENTE').reduce((sum: number, cheque: Cheque) => sum + Number(cheque.monto), 0))}
+                          </div>
+                          <div className="text-xs opacity-75">*Solo página actual</div>
+                        </div>
+                      </div>
+
+                      {/* Cobrados de la página */}
+                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                        <div className="text-center">
+                          <div className="text-xs font-medium opacity-90">Cobrado</div>
+                          <div className="text-lg font-bold">
+                            {formatCurrency(data.data.filter(c => c.estado === 'COBRADO').reduce((sum: number, cheque: Cheque) => sum + Number(cheque.monto), 0))}
+                          </div>
+                          <div className="text-xs opacity-75">*Solo página actual</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <Table
             data={data?.data || []}

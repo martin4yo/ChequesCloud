@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import routes from './routes';
-import { sequelize } from './models';
+import prisma from './lib/prisma';
 
 const app = express();
 
@@ -81,16 +81,9 @@ app.use(errorHandler);
 // Database connection and sync
 const connectDatabase = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('✅ Conectado a la base de datos');
-    
-    // Sync models without recreating tables
-    if (process.env.NODE_ENV !== 'production') {
-      await sequelize.sync();
-      console.log('✅ Modelos sincronizados');
-    } else {
-      console.log('✅ Base de datos conectada - Sin sincronización automática');
-    }
+    await prisma.$connect();
+    console.log('✅ Conectado a la base de datos con Prisma');
+    console.log('✅ Prisma Client inicializado');
   } catch (error) {
     console.error('❌ Error en la conexión a la base de datos:', error);
     process.exit(1);

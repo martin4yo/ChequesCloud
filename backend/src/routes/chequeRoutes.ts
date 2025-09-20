@@ -5,8 +5,8 @@ import {
   createCheque,
   updateCheque,
   deleteCheque,
-  marcarComoCobrado,
-  exportChequesToExcel
+  marcarComoCobrado
+  // exportChequesToExcel // TODO: Port to Prisma
 } from '../controllers/chequeController';
 import { validate } from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
@@ -18,7 +18,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', getCheques);
-router.get('/export', exportChequesToExcel);
+// router.get('/export', exportChequesToExcel); // TODO: Port to Prisma
 router.get('/:id', getChequeById);
 router.post('/', validate(chequeSchema), createCheque);
 router.put('/:id', validate(updateChequeSchema), updateCheque);

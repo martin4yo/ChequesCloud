@@ -1,0 +1,27 @@
+{
+  "name": "chequescloud",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ecosystem.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martin4yo/ChequesCloud.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/martin4yo/ChequesCloud/issues"
+  },
+  "homepage": "https://github.com/martin4yo/ChequesCloud#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

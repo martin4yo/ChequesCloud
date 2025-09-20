@@ -65,8 +65,8 @@ export interface Cheque {
   id: number;
   numero: string;
   chequeraId: number;
-  fechaEmision: string;
-  fechaVencimiento: string;
+  fechaEmision: string; // UTC datetime string from backend
+  fechaVencimiento: string; // UTC datetime string from backend
   beneficiario: string;
   concepto: string;
   monto: number;
@@ -103,12 +103,20 @@ export interface PaginationQuery {
   sortOrder?: 'ASC' | 'DESC';
 }
 
+export interface ChequeTotal {
+  total: number;
+  pendiente: number;
+  cobrado: number;
+  anulado: number;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
+  totales?: ChequeTotal;
 }
 
 export interface ChequeFilters {

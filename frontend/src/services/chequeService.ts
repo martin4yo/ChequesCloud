@@ -3,8 +3,12 @@ import type { Cheque, ChequeInput, PaginatedResponse, PaginationQuery, ChequeFil
 
 export const chequeService = {
   getCheques: async (params?: PaginationQuery & ChequeFilters): Promise<PaginatedResponse<Cheque>> => {
-    const response = await apiRequest<{ cheques: Cheque[]; total: number; page: number; limit: number; totalPages: number }>('GET', '/cheques', undefined, { params });
- 
+    console.log('🚀 SERVICIO DEBUG - Parámetros recibidos:', params);
+    console.log('📅 fechaDesde en servicio:', params?.fechaDesde);
+    console.log('📅 fechaHasta en servicio:', params?.fechaHasta);
+
+    const response = await apiRequest<{ cheques: Cheque[]; total: number; page: number; limit: number; totalPages: number; totales?: any }>('GET', '/cheques', undefined, { params });
+
     if (response.success && response.data) {
       return {
         data: response.data.cheques,
@@ -12,6 +16,7 @@ export const chequeService = {
         page: response.data.page,
         limit: response.data.limit,
         totalPages: response.data.totalPages,
+        totales: response.data.totales,
       };
     }
     throw new Error(response.error || 'Error al obtener cheques');
@@ -49,10 +54,14 @@ export const chequeService = {
   },
 
   marcarComoCobrado: async (id: number): Promise<Cheque> => {
+    console.log(`🔄 Marcando cheque ${id} como cobrado...`);
     const response = await apiRequest<Cheque>('PATCH', `/cheques/${id}/cobrar`);
+    console.log(`📦 Respuesta marcar como cobrado:`, response);
     if (response.success && response.data) {
+      console.log(`✅ Cheque ${id} marcado como cobrado exitosamente:`, response.data);
       return response.data;
     }
+    console.error(`❌ Error al marcar cheque ${id} como cobrado:`, response);
     throw new Error(response.error || 'Error al marcar cheque como cobrado');
   },
 

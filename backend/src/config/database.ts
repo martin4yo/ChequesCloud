@@ -18,8 +18,8 @@ const config: DatabaseConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   host: process.env.DB_HOST || 'localhost',
-  dialect: (process.env.DB_DIALECT as DatabaseConfig['dialect']) || 'mssql',
-  port: parseInt(process.env.DB_PORT || '1433'),
+  dialect: (process.env.DB_DIALECT as DatabaseConfig['dialect']) || 'postgres',
+  port: parseInt(process.env.DB_PORT || '5432'),
   logging: process.env.NODE_ENV !== 'production',
 };
 
@@ -27,18 +27,9 @@ const sequelize = new Sequelize(config.name, config.user, config.password, {
   host: config.host,
   dialect: config.dialect,
   port: config.port,
-  timezone: 'America/Argentina/Buenos_Aires', // Tu zona horaria local
+  timezone: 'America/Argentina/Buenos_Aires',
   dialectOptions: {
-    connectTimeout: 60000,
-    useUTC: false,
-    dateFirst: 1,
-    dateStrings: true,
-    typeCast: function (field: any, next: any) {
-      if (field.type === 'DATETIME') {
-        return field.string();
-      }
-      return next();
-    }
+    ssl: false,
   },
   logging: config.logging ? (msg: string) => console.log(msg) : false,
   pool: {

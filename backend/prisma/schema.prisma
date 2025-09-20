@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(256)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("usuarios")
+}
+
+model Banco {
+  id         Int        @id @default(autoincrement())
+  codigo     String     @unique @db.VarChar(10)
+  nombre     String     @db.VarChar(100)
+  habilitado Boolean    @default(true)
+  createdAt  DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime   @updatedAt @db.Timestamptz(6)
+  chequeras  Chequera[]
+
+  @@map("bancos")
+}
+
+model Chequera {
+  id            Int      @id @default(autoincrement())
+  numero        String   @unique @db.VarChar(20)
+  bancoId       Int
+  saldoInicial  Decimal  @default(0) @db.Decimal(15, 2)
+  saldoActual   Decimal  @default(0) @db.Decimal(15, 2)
+  fechaCreacion DateTime @db.Timestamptz(6)
+  activa        Boolean  @default(true)
+  chequeDesde   Int
+  chequeHasta   Int
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+  banco         Banco    @relation(fields: [bancoId], references: [id], onDelete: Cascade)
+  cheques       Cheque[]
+
+  @@map("chequeras")
+}
+
+model Cheque {
+  id               Int                 @id @default(autoincrement())
+  numero           String              @db.VarChar(50)
+  chequeraId       Int
+  fechaEmision     DateTime            @db.Date
+  fechaVencimiento DateTime            @db.Date
+  beneficiario     String              @db.VarChar(250)
+  concepto         String?             @db.VarChar(500)
+  monto            Decimal             @db.Decimal(15, 2)
+  estado           enum_cheques_estado @default(PENDIENTE)
+  fechaCobro       DateTime?           @db.Timestamptz(6)
+  createdAt        DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime            @updatedAt @db.Timestamptz(6)
+  chequera         Chequera            @relation(fields: [chequeraId], references: [id], onDelete: Cascade)
+
+  @@map("cheques")
+}
+
+enum enum_cheques_estado {
+  PENDIENTE
+  COBRADO
+  ANULADO
+}

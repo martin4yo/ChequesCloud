@@ -63,8 +63,8 @@ export interface Cheque {
   id: number;
   numero: string;
   chequeraId: number;
-  fechaEmision: string; // DATEONLY field returns string in YYYY-MM-DD format
-  fechaVencimiento: string; // DATEONLY field returns string in YYYY-MM-DD format
+  fechaEmision: Date; // DATETIME field with UTC 00:00:00
+  fechaVencimiento: Date; // DATETIME field with UTC 00:00:00
   beneficiario: string;
   concepto: string;
   monto: number;
@@ -78,8 +78,8 @@ export interface Cheque {
 export interface ChequeInput {
   numero: string;
   chequeraId: number;
-  fechaEmision: string; // Date string in YYYY-MM-DD format
-  fechaVencimiento: string; // Date string in YYYY-MM-DD format
+  fechaEmision: string; // Date string that will be converted to UTC 00:00:00
+  fechaVencimiento: string; // Date string that will be converted to UTC 00:00:00
   beneficiario: string;
   concepto: string;
   monto: number;
