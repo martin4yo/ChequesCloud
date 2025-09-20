@@ -1,51 +1,40 @@
 #!/bin/bash
 
-# Script para iniciar ChequesCloud en producción
-# URL: http://149.50.148.198:8085/
+echo "============================================"
+echo "   Iniciando ChequesCloud en Producción"
+echo "   URL: http://149.50.148.198:8085/"
+echo "============================================"
+echo
 
-echo "🚀 Iniciando ChequesCloud en modo producción..."
-echo "=====================================���========"
-
-# Navegar al directorio del backend
+# Compilar y ejecutar Backend
+echo "[1/4] Compilando backend..."
 cd backend
-
-# Compilar el backend
-echo "📦 Compilando backend..."
 npm run build
 
-# Copiar archivo de producción
+# Copiar configuración de producción
+echo "[2/4] Configurando entorno de producción..."
 cp .env.production .env
 
-# Iniciar el backend en background
-echo "🔧 Iniciando backend en puerto 8085..."
-NODE_ENV=production PORT=8085 npm start &
-BACKEND_PID=$!
+# Configurar variables de entorno
+echo "[3/4] Configurando variables de entorno..."
+export NODE_ENV=production
+export PORT=8085
+echo "NODE_ENV establecido a: $NODE_ENV"
+echo "PORT establecido a: $PORT"
 
-# Esperar a que el backend inicie
-sleep 5
-
-# Navegar al directorio del frontend
+# Compilar Frontend
+echo "[4/4] Compilando frontend para producción..."
 cd ../frontend
-
-# Compilar el frontend para producción
-echo "📦 Compilando frontend..."
 npm run build -- --mode production
 
-# Servir el frontend con un servidor estático
-echo "🌐 Sirviendo frontend..."
-npx serve -s dist -l 8085 &
-FRONTEND_PID=$!
-
-echo "=============================================="
-echo "✅ ChequesCloud está corriendo en producción!"
-echo "🔗 URL: http://149.50.148.198:8085/"
-echo "🔗 API: http://149.50.148.198:8085/api"
-echo "=============================================="
-echo "Backend PID: $BACKEND_PID"
-echo "Frontend PID: $FRONTEND_PID"
-echo ""
-echo "Para detener los servicios:"
-echo "kill $BACKEND_PID $FRONTEND_PID"
-
-# Mantener el script corriendo
-wait
+echo
+echo "============================================"
+echo "   ChequesCloud compilado exitosamente!"
+echo "============================================"
+echo
+echo "Para iniciar el servidor ejecuta:"
+echo "  cd backend && npm start"
+echo
+echo "   Backend:  http://149.50.148.198:8085/api"
+echo "   Frontend: http://149.50.148.198:8085/"
+echo "============================================"
