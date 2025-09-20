@@ -17,7 +17,7 @@ import Modal from '../components/ui/Modal';
 import Table from '../components/ui/Table';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
-import { formatCurrency, formatUTCDate, formatDateTimePlusOneDay, downloadBlob, dateToUTC, utcToLocalDate } from '../lib/utils';
+import { formatCurrency, formatUTCDate, formatDateTimePlusOneDay, downloadBlob, utcToLocalDate } from '../lib/utils';
 
 const chequeSchema = z.object({
   numero: z.string().min(1, 'El número es requerido'),

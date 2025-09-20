@@ -350,7 +350,7 @@ export const updateCheque = asyncHandler(async (req: Request, res: Response) => 
     concepto,
     monto,
     estado,
-    fechaCobro: estado === 'COBRADO' ? new Date() : (estado !== 'COBRADO' ? null : cheque.fechaCobro) // Update fechaCobro correctly
+    fechaCobro: estado === 'COBRADO' ? new Date() : (estado === 'PENDIENTE' || estado === 'ANULADO' ? undefined : cheque.fechaCobro) // Update fechaCobro correctly
   });
 
   // Update chequera balances based on state changes

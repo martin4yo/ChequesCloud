@@ -26,7 +26,8 @@
       "Bash(call kill-port-3000.bat)",
       "Bash(cmd /c:*)",
       "Bash(call backendkill-port-3000.bat)",
-      "Bash(kill-port-3000.bat)"
+      "Bash(kill-port-3000.bat)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }

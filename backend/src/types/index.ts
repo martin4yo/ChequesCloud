@@ -120,6 +120,15 @@ export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
+export interface ChequeFilters {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  search?: string;
+  bancoId?: string;
+  chequeraId?: string;
+  estado?: string;
+}
+
 export interface ExcelExportOptions {
   filename: string;
   sheetName: string;
