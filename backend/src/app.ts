@@ -56,24 +56,40 @@ app.use('/api', (req, res, next) => {
 // API routes
 app.use('/api', routes);
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'ChequesCloud API - Servidor funcionando correctamente',
-    version: '2.0.0',
-    timestamp: new Date().toISOString()
-  });
-});
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  const frontendPath = path.join(__dirname, '../../frontend/dist');
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint no encontrado',
-    path: req.originalUrl
+  // Serve static files
+  app.use(express.static(frontendPath));
+
+  // Handle React Router - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
   });
-});
+} else {
+  // Root endpoint for development
+  app.get('/', (req, res) => {
+    res.json({
+      success: true,
+      message: 'ChequesCloud API - Servidor funcionando correctamente',
+      version: '2.0.0',
+      timestamp: new Date().toISOString()
+    });
+  });
+}
+
+// 404 handler - only for API routes in production
+if (process.env.NODE_ENV !== 'production') {
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      error: 'Endpoint no encontrado',
+      path: req.originalUrl
+    });
+  });
+}
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
