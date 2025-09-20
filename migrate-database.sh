@@ -159,9 +159,18 @@ echo "🌐 Producción: $PROD_HOST:$PROD_PORT/$PROD_DB"
 echo
 echo "PRÓXIMOS PASOS:"
 echo "1. Iniciar la aplicación en producción"
-echo "2. Verificar que el login funcione"
-echo "3. Probar la funcionalidad completa"
+echo "2. Configurar Nginx para cheques.axiomacloud.com"
+echo "3. Configurar SSL con Let's Encrypt"
+echo "4. Verificar que el login funcione"
+echo "5. Probar la funcionalidad completa"
+echo
+echo "Para configurar el dominio:"
+echo "  sudo cp nginx-cheques.axiomacloud.com.conf /etc/nginx/sites-available/"
+echo "  sudo ln -s /etc/nginx/sites-available/cheques.axiomacloud.com /etc/nginx/sites-enabled/"
+echo "  sudo certbot --nginx -d cheques.axiomacloud.com"
 echo
 echo "Para iniciar en producción ejecuta:"
 echo "  ./start-production.sh"
+echo
+echo "URL Final: https://cheques.axiomacloud.com"
 echo
