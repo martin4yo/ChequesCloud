@@ -27,7 +27,9 @@
       "Bash(cmd /c:*)",
       "Bash(call backendkill-port-3000.bat)",
       "Bash(kill-port-3000.bat)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(set NODE_ENV=production)",
+      "Bash(set PORT=8085)"
     ],
     "deny": []
   }

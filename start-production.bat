@@ -14,11 +14,16 @@ REM Copiar configuracion de produccion
 echo [2/4] Configurando entorno de produccion...
 copy .env.production .env /Y
 
-REM Iniciar backend
-echo [3/4] Iniciando backend en puerto 8085...
+REM Verificar variables de entorno
+echo [3/4] Configurando variables de entorno...
 set NODE_ENV=production
 set PORT=8085
-start "Backend ChequesCloud" cmd /k npm start
+echo NODE_ENV establecido a: %NODE_ENV%
+echo PORT establecido a: %PORT%
+
+REM Iniciar backend
+echo Iniciando backend en puerto 8085...
+start "Backend ChequesCloud" cmd /k "set NODE_ENV=production && set PORT=8085 && npm start"
 
 REM Esperar 5 segundos para que el backend inicie
 timeout /t 5

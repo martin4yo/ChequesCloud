@@ -1,11 +1,16 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Load environment specific config
+if (process.env.NODE_ENV === 'production') {
+  dotenv.config({ path: '.env.production' });
+} else {
+  dotenv.config();
+}
 
 export const config = {
   api: {
-    baseUrl: process.env.API_URL || 'http://localhost:3000',
-    port: parseInt(process.env.PORT || '3000'),
+    baseUrl: process.env.API_URL || 'http://localhost:8085',
+    port: parseInt(process.env.PORT || '8085'),
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
