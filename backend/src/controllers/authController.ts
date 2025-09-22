@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { ApiResponse, LoginInput, UserInput } from '../types';
-import { Usuario } from '../models';
+import prisma from '../lib/prisma';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../middleware/auth';
 
@@ -11,7 +11,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   console.log('📝 Intento de registro:', { username, email, passwordLength: password?.length });
 
   // Check if user already exists
-  const existingUser = await Usuario.findOne({
+  const existingUser = await prisma.usuario.findUnique({
     where: { email }
   });
 
@@ -28,10 +28,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   // Create user
   console.log('💾 Creando usuario en base de datos...');
-  const user = await Usuario.create({
-    username,
-    email,
-    password: hashedPassword
+  const user = await prisma.usuario.create({
+    data: {
+      username,
+      email,
+      password: hashedPassword
+    }
   });
 
   console.log('✅ Usuario creado exitosamente:', {
@@ -71,7 +73,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   console.log('🔐 Intento de login:', { email, passwordLength: password?.length });
 
   // Find user
-  const user = await Usuario.findOne({
+  const user = await prisma.usuario.findUnique({
     where: { email }
   });
 
@@ -117,8 +119,15 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getProfile = asyncHandler(async (req: any, res: Response) => {
-  const user = await Usuario.findByPk(req.user.userId, {
-    attributes: { exclude: ['password'] }
+  const user = await prisma.usuario.findUnique({
+    where: { id: req.user.userId },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      createdAt: true,
+      updatedAt: true
+    }
   });
 
   if (!user) {
