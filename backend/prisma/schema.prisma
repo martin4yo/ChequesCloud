@@ -8,14 +8,29 @@ datasource db {
 }
 
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique @db.VarChar(50)
-  email     String   @unique @db.VarChar(100)
-  password  String   @db.VarChar(256)
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  id                   Int                    @id @default(autoincrement())
+  username             String                 @unique @db.VarChar(50)
+  email                String                 @unique @db.VarChar(100)
+  password             String                 @db.VarChar(256)
+  activo               Boolean                @default(true)
+  createdAt            DateTime               @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime               @updatedAt @db.Timestamptz(6)
+  passwordResetTokens  PasswordResetToken[]
 
   @@map("usuarios")
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime @db.Timestamptz(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  usuario   Usuario  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 model Banco {

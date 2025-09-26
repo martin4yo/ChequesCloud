@@ -3,14 +3,14 @@ import type { Banco, BancoInput, PaginatedResponse, PaginationQuery } from '../t
 
 export const bancoService = {
   getBancos: async (params?: PaginationQuery): Promise<PaginatedResponse<Banco>> => {
-    const response = await apiRequest<{ bancos: Banco[]; total: number; page: number; limit: number; totalPages: number }>('GET', '/bancos', undefined, { params });
+    const response = await apiRequest<Banco[]>('GET', '/bancos', undefined, { params });
     if (response.success && response.data) {
       return {
-        data: response.data.bancos,
-        total: response.data.total,
-        page: response.data.page,
-        limit: response.data.limit,
-        totalPages: response.data.totalPages,
+        data: response.data,
+        total: response.total || 0,
+        page: response.page || 1,
+        limit: params?.limit || 10,
+        totalPages: response.totalPages || 1,
       };
     }
     throw new Error(response.error || 'Error al obtener bancos');

@@ -224,3 +224,29 @@ export const deleteBanco = async (req: Request, res: Response): Promise<void> =>
     });
   }
 };
+
+export const getBancosHabilitados = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const bancos = await prisma.banco.findMany({
+      where: { habilitado: true },
+      orderBy: { nombre: 'asc' },
+      select: {
+        id: true,
+        nombre: true,
+        codigo: true,
+        habilitado: true
+      }
+    });
+
+    res.json({
+      success: true,
+      data: bancos
+    });
+  } catch (error: any) {
+    console.error('❌ Error obteniendo bancos habilitados:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};

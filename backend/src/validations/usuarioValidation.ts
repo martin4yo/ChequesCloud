@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-export const registerSchema = Joi.object({
+export const usuarioSchema = Joi.object({
   username: Joi.string()
     .min(3)
     .max(50)
@@ -23,10 +23,24 @@ export const registerSchema = Joi.object({
     .messages({
       'string.min': 'La contraseña debe tener al menos 6 caracteres',
       'any.required': 'La contraseña es requerida'
+    }),
+  activo: Joi.boolean()
+    .optional()
+    .messages({
+      'boolean.base': 'El estado debe ser verdadero o falso'
     })
 });
 
-export const loginSchema = Joi.object({
+export const updateUsuarioSchema = Joi.object({
+  username: Joi.string()
+    .min(3)
+    .max(50)
+    .required()
+    .messages({
+      'string.min': 'El nombre de usuario debe tener al menos 3 caracteres',
+      'string.max': 'El nombre de usuario no puede tener más de 50 caracteres',
+      'any.required': 'El nombre de usuario es requerido'
+    }),
   email: Joi.string()
     .email()
     .required()
@@ -35,33 +49,15 @@ export const loginSchema = Joi.object({
       'any.required': 'El email es requerido'
     }),
   password: Joi.string()
-    .required()
-    .messages({
-      'any.required': 'La contraseña es requerida'
-    })
-});
-
-export const forgotPasswordSchema = Joi.object({
-  email: Joi.string()
-    .email()
-    .required()
-    .messages({
-      'string.email': 'Debe ser un email válido',
-      'any.required': 'El email es requerido'
-    })
-});
-
-export const resetPasswordSchema = Joi.object({
-  token: Joi.string()
-    .required()
-    .messages({
-      'any.required': 'El token es requerido'
-    }),
-  newPassword: Joi.string()
     .min(6)
-    .required()
+    .optional()
+    .allow('')
     .messages({
-      'string.min': 'La contraseña debe tener al menos 6 caracteres',
-      'any.required': 'La nueva contraseña es requerida'
+      'string.min': 'La contraseña debe tener al menos 6 caracteres'
+    }),
+  activo: Joi.boolean()
+    .optional()
+    .messages({
+      'boolean.base': 'El estado debe ser verdadero o falso'
     })
 });

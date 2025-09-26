@@ -34,7 +34,12 @@
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"si\" npx prisma migrate reset --force)",
       "Bash(set PORT=3001)",
       "Bash(find:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(set PORT=3000)",
+      "Bash(Get-Process -Id 5084)",
+      "Bash(Stop-Process -Force)",
+      "Bash(pg_dump:*)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }

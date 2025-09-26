@@ -68,4 +68,22 @@ export const authService = {
     }
     throw new Error(response.error || 'Error al obtener el perfil');
   },
+
+  forgotPassword: async (email: string): Promise<any> => {
+    const response = await apiRequest('POST', '/auth/forgot-password', { email });
+    return response;
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<any> => {
+    const response = await apiRequest('POST', '/auth/reset-password', {
+      token,
+      newPassword
+    });
+    return response;
+  },
+
+  validateResetToken: async (token: string): Promise<any> => {
+    const response = await apiRequest('GET', `/auth/validate-reset-token/${token}`);
+    return response;
+  },
 };

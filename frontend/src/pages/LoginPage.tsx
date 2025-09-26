@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -121,6 +121,17 @@ const LoginPage: React.FC = () => {
                 {...registerForm('password')}
               />
 
+              {!isRegister && (
+                <div className="text-right">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-primary-600 hover:text-primary-500"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
@@ -139,8 +150,8 @@ const LoginPage: React.FC = () => {
                 }}
                 className="text-primary-600 hover:text-primary-500 text-sm"
               >
-                {isRegister 
-                  ? '¿Ya tienes cuenta? Inicia sesión' 
+                {isRegister
+                  ? '¿Ya tienes cuenta? Inicia sesión'
                   : '¿No tienes cuenta? Regístrate'
                 }
               </button>

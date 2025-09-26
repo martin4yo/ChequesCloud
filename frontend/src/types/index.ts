@@ -93,6 +93,9 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+  total?: number;
+  page?: number;
+  totalPages?: number;
 }
 
 export interface PaginationQuery {

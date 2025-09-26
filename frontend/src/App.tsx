@@ -8,10 +8,13 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import NotificationList from './components/ui/NotificationList';
 import LoginPage from './pages/LoginPage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import DashboardPage from './pages/DashboardPage';
 import BancosPage from './pages/BancosPage';
 import ChequerasPage from './pages/ChequerasPage';
 import ChequesPage from './pages/ChequesPage';
+import UsuariosPage from './pages/UsuariosPage';
 
 function App() {
   const { checkAuth } = useAuthStore();
@@ -26,6 +29,8 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route
               path="/*"
               element={
@@ -38,6 +43,7 @@ function App() {
               <Route path="bancos" element={<BancosPage />} />
               <Route path="chequeras" element={<ChequerasPage />} />
               <Route path="cheques" element={<ChequesPage />} />
+              <Route path="usuarios" element={<UsuariosPage />} />
             </Route>
           </Routes>
           

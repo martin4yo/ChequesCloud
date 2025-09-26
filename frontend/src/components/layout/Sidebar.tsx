@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  Home, 
-  Building2, 
-  CreditCard, 
-  FileText, 
+import {
+  Home,
+  Building2,
+  CreditCard,
+  FileText,
+  Users,
   User,
   LogOut,
   X
@@ -18,6 +19,7 @@ const navigation = [
   { name: 'Bancos', href: '/bancos', icon: Building2 },
   { name: 'Chequeras', href: '/chequeras', icon: CreditCard },
   { name: 'Cheques', href: '/cheques', icon: FileText },
+  { name: 'Usuarios', href: '/usuarios', icon: Users },
 ];
 
 const Sidebar: React.FC = () => {

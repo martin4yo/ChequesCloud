@@ -4,7 +4,8 @@ import {
   getBancoById,
   createBanco,
   updateBanco,
-  deleteBanco
+  deleteBanco,
+  getBancosHabilitados
 } from '../controllers/bancoController';
 import { validate } from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
@@ -16,6 +17,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', getBancos);
+router.get('/habilitados', getBancosHabilitados);
 router.get('/:id', getBancoById);
 router.post('/', validate(bancoSchema), createBanco);
 router.put('/:id', validate(updateBancoSchema), updateBanco);
