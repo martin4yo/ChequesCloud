@@ -43,7 +43,10 @@ const ChequesPage: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [bancoFilter, setBancoFilter] = useState(searchParams.get('bancoId') || '');
-  const [fechaDesde, setFechaDesde] = useState(searchParams.get('fechaDesde') || '');
+  // Si no hay parámetro fechaDesde en URL, usar la fecha actual como valor inicial
+  const [fechaDesde, setFechaDesde] = useState(
+    searchParams.get('fechaDesde') || new Date().toISOString().split('T')[0]
+  );
   const [fechaHasta, setFechaHasta] = useState(searchParams.get('fechaHasta') || '');
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);

@@ -1,229 +1,356 @@
 import { Request, Response } from 'express';
-import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { ApiResponse, ChequeraInput, PaginationQuery } from '../types';
-import { Chequera, Banco, Cheque } from '../models';
-import { Op } from 'sequelize';
+import prisma from '../lib/prisma';
+import type { ApiResponse, ChequeraInput, PaginationQuery } from '../types';
 
-export const getChequeras = asyncHandler(async (req: Request, res: Response) => {
-  const { page = 1, limit = 10, search, bancoId, sortBy = 'numero', sortOrder = 'ASC' } = req.query as PaginationQuery & { bancoId?: string };
+export const getChequeras = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 10, search, bancoId, sortBy = 'numero', sortOrder = 'asc' } = req.query as PaginationQuery & { bancoId?: string };
 
-  const offset = (Number(page) - 1) * Number(limit);
-  let whereClause: any = {};
-  const includeOptions: any = [
-    {
-      model: Banco,
-      as: 'banco',
-      attributes: ['id', 'nombre', 'codigo']
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const whereClause: any = {};
+
+    if (search) {
+      whereClause.OR = [
+        { numero: { contains: search, mode: 'insensitive' } }
+      ];
     }
-  ];
 
-  if (search) {
-    // Buscar tanto en el número de chequera como en el nombre del banco usando subquery
-    whereClause[Op.or] = [
-      { numero: { [Op.like]: `%${search}%` } },
-      {
-        '$banco.nombre$': { [Op.like]: `%${search}%` }
-      }
-    ];
-  }
-
-  if (bancoId) {
-    whereClause.bancoId = bancoId;
-  }
-
-  const { count, rows } = await Chequera.findAndCountAll({
-    where: whereClause,
-    include: includeOptions,
-    limit: Number(limit),
-    offset,
-    order: [[sortBy as string, sortOrder as string]],
-    distinct: true // Para evitar duplicados en el count
-  });
-
-  const response: ApiResponse = {
-    success: true,
-    data: {
-      chequeras: rows,
-      total: count,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(count / Number(limit))
+    if (bancoId) {
+      whereClause.bancoId = Number(bancoId);
     }
-  };
 
-  res.json(response);
-});
+    const orderBy: any = {};
+    orderBy[sortBy as string] = sortOrder === 'desc' ? 'desc' : 'asc';
 
-export const getChequeraById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+    const [chequeras, total] = await Promise.all([
+      prisma.chequera.findMany({
+        where: whereClause,
+        orderBy,
+        skip: offset,
+        take: Number(limit),
+        include: {
+          banco: {
+            select: { id: true, nombre: true, codigo: true }
+          },
+          _count: {
+            select: { cheques: true }
+          }
+        }
+      }),
+      prisma.chequera.count({ where: whereClause })
+    ]);
 
-  const chequera = await Chequera.findByPk(id, {
-    include: [
-      {
-        model: Banco,
-        as: 'banco',
-        attributes: ['id', 'nombre', 'codigo']
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        chequeras,
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
       }
-    ]
-  });
+    };
 
-  if (!chequera) {
-    throw new AppError('Chequera no encontrada', 404);
+    res.json(response);
+  } catch (error: any) {
+    console.error('❌ Error obteniendo chequeras:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  const response: ApiResponse = {
-    success: true,
-    data: chequera
-  };
-
-  res.json(response);
-});
-
-export const createChequera = asyncHandler(async (req: Request, res: Response) => {
-  const { numero, bancoId, saldoInicial, activa, chequeDesde, chequeHasta }: ChequeraInput = req.body;
-
-  console.log('🏦 Creando chequera:', { numero, bancoId, saldoInicial, activa, chequeDesde, chequeHasta });
-
-  // Verify bank exists
-  const banco = await Banco.findByPk(bancoId);
-  
-  if (!banco) {
-    throw new AppError('Banco no encontrado', 404);
-  }
-
-  const chequera = await Chequera.create({
-    numero,
-    bancoId,
-    saldoInicial,
-    saldoActual: saldoInicial,
-    fechaCreacion: new Date(),
-    activa,
-    chequeDesde,
-    chequeHasta
-  });
-
-  const chequeraWithBanco = await Chequera.findByPk(chequera.id, {
-    include: [
-      {
-        model: Banco,
-        as: 'banco',
-        attributes: ['id', 'nombre', 'codigo']
+export const getChequerasActivas = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const chequeras = await prisma.chequera.findMany({
+      where: {
+        activa: true,
+        banco: { habilitado: true }
+      },
+      orderBy: { numero: 'asc' },
+      include: {
+        banco: {
+          select: { id: true, nombre: true, codigo: true }
+        }
       }
-    ]
-  });
+    });
 
-  const response: ApiResponse = {
-    success: true,
-    data: chequeraWithBanco,
-    message: 'Chequera creada exitosamente'
-  };
-
-  res.status(201).json(response);
-});
-
-export const updateChequera = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { numero, bancoId, saldoInicial, activa, chequeDesde, chequeHasta }: ChequeraInput = req.body;
-
-  const chequera = await Chequera.findByPk(id);
-
-  if (!chequera) {
-    throw new AppError('Chequera no encontrada', 404);
+    res.json({
+      success: true,
+      data: chequeras
+    });
+  } catch (error: any) {
+    console.error('❌ Error obteniendo chequeras activas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  // Verify bank exists if bancoId is being updated
-  if (bancoId && bancoId !== chequera.bancoId) {
-    const banco = await Banco.findByPk(bancoId);
+export const getChequeraById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const chequera = await prisma.chequera.findUnique({
+      where: { id: Number(id) },
+      include: {
+        banco: true,
+        cheques: {
+          orderBy: { createdAt: 'desc' },
+          take: 10 // Last 10 cheques
+        },
+        _count: {
+          select: { cheques: true }
+        }
+      }
+    });
+
+    if (!chequera) {
+      res.status(404).json({
+        success: false,
+        error: 'Chequera no encontrada'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: chequera
+    });
+  } catch (error: any) {
+    console.error('❌ Error obteniendo chequera:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
+
+export const createChequera = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      numero,
+      bancoId,
+      saldoInicial,
+      fechaCreacion,
+      activa = true,
+      chequeDesde,
+      chequeHasta
+    }: ChequeraInput = req.body;
+
+    console.log('🏦 Creando chequera:', { numero, bancoId, saldoInicial, activa, chequeDesde, chequeHasta });
+
+    // Validate that banco exists
+    const banco = await prisma.banco.findUnique({
+      where: { id: bancoId }
+    });
+
     if (!banco) {
-      throw new AppError('Banco no encontrado', 404);
+      res.status(404).json({
+        success: false,
+        error: 'Banco no encontrado'
+      });
+      return;
     }
-  }
 
-  await chequera.update({
-    numero,
-    bancoId,
-    saldoInicial,
-    activa,
-    chequeDesde,
-    chequeHasta
-  });
+    // Validate cheque range
+    if (chequeHasta <= chequeDesde) {
+      res.status(400).json({
+        success: false,
+        error: 'El número de cheque final debe ser mayor al inicial'
+      });
+      return;
+    }
 
-  const chequeraWithBanco = await Chequera.findByPk(chequera.id, {
-    include: [
-      {
-        model: Banco,
-        as: 'banco',
-        attributes: ['id', 'nombre', 'codigo']
+    const chequera = await prisma.chequera.create({
+      data: {
+        numero,
+        bancoId,
+        saldoInicial,
+        saldoActual: saldoInicial,
+        fechaCreacion: fechaCreacion ? new Date(fechaCreacion) : new Date(),
+        activa,
+        chequeDesde,
+        chequeHasta
+      },
+      include: {
+        banco: {
+          select: { id: true, nombre: true, codigo: true }
+        }
       }
-    ]
-  });
+    });
 
-  const response: ApiResponse = {
-    success: true,
-    data: chequeraWithBanco,
-    message: 'Chequera actualizada exitosamente'
-  };
+    console.log(`✅ PRISMA - Chequera creada exitosamente: ${chequera.id}`);
 
-  res.json(response);
-});
+    res.status(201).json({
+      success: true,
+      data: chequera,
+      message: 'Chequera creada exitosamente'
+    });
+  } catch (error: any) {
+    console.error('❌ Error creando chequera:', error);
 
-export const deleteChequera = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+    if (error.code === 'P2002') {
+      res.status(409).json({
+        success: false,
+        error: 'Ya existe una chequera con este número'
+      });
+      return;
+    }
 
-  const chequera = await Chequera.findByPk(id, {
-    include: [
-      {
-        model: Banco,
-        as: 'banco',
-        attributes: ['nombre']
-      }
-    ]
-  });
-
-  if (!chequera) {
-    throw new AppError('Chequera no encontrada', 404);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  // Check if chequera has associated cheques
-  const cheques = await Cheque.findAll({
-    where: { chequeraId: id }
-  });
+export const updateChequera = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const {
+      numero,
+      bancoId,
+      saldoInicial,
+      fechaCreacion,
+      activa,
+      chequeDesde,
+      chequeHasta
+    }: ChequeraInput = req.body;
 
-  if (cheques.length > 0) {
-    throw new AppError(
-      `No se puede eliminar la chequera "${chequera.numero}" del banco "${chequera.banco?.nombre}" porque tiene ${cheques.length} cheque(s) registrado(s). Elimine primero todos los cheques asociados.`,
-      400
-    );
-  }
+    const chequera = await prisma.chequera.findUnique({
+      where: { id: Number(id) }
+    });
 
-  await chequera.destroy();
+    if (!chequera) {
+      res.status(404).json({
+        success: false,
+        error: 'Chequera no encontrada'
+      });
+      return;
+    }
 
-  const response: ApiResponse = {
-    success: true,
-    message: 'Chequera eliminada exitosamente'
-  };
+    // Validate that banco exists
+    const banco = await prisma.banco.findUnique({
+      where: { id: bancoId }
+    });
 
-  res.json(response);
-});
+    if (!banco) {
+      res.status(404).json({
+        success: false,
+        error: 'Banco no encontrado'
+      });
+      return;
+    }
 
-export const getChequerasActivas = asyncHandler(async (req: Request, res: Response) => {
-  const chequeras = await Chequera.findAll({
-    where: { activa: true },
-    include: [
-      {
-        model: Banco,
-        as: 'banco',
-        attributes: ['id', 'nombre', 'codigo'],
-        where: { habilitado: true }
+    // Validate cheque range
+    if (chequeHasta <= chequeDesde) {
+      res.status(400).json({
+        success: false,
+        error: 'El número de cheque final debe ser mayor al inicial'
+      });
+      return;
+    }
+
+    // Calculate new saldoActual if saldoInicial changed
+    let newSaldoActual = chequera.saldoActual;
+    if (saldoInicial !== chequera.saldoInicial) {
+      const difference = Number(saldoInicial) - Number(chequera.saldoInicial);
+      newSaldoActual = Number(chequera.saldoActual) + difference;
+    }
+
+    const updatedChequera = await prisma.chequera.update({
+      where: { id: Number(id) },
+      data: {
+        numero,
+        bancoId,
+        saldoInicial,
+        saldoActual: newSaldoActual,
+        fechaCreacion: fechaCreacion ? new Date(fechaCreacion) : chequera.fechaCreacion,
+        activa,
+        chequeDesde,
+        chequeHasta
+      },
+      include: {
+        banco: {
+          select: { id: true, nombre: true, codigo: true }
+        }
       }
-    ],
-    order: [['numero', 'ASC']]
-  });
+    });
 
-  const response: ApiResponse = {
-    success: true,
-    data: chequeras
-  };
+    console.log(`✅ PRISMA - Chequera actualizada exitosamente: ${id}`);
 
-  res.json(response);
-});
+    res.json({
+      success: true,
+      data: updatedChequera,
+      message: 'Chequera actualizada exitosamente'
+    });
+  } catch (error: any) {
+    console.error('❌ Error actualizando chequera:', error);
+
+    if (error.code === 'P2002') {
+      res.status(409).json({
+        success: false,
+        error: 'Ya existe una chequera con este número'
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
+
+export const deleteChequera = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const chequera = await prisma.chequera.findUnique({
+      where: { id: Number(id) },
+      include: {
+        banco: { select: { nombre: true } },
+        _count: {
+          select: { cheques: true }
+        }
+      }
+    });
+
+    if (!chequera) {
+      res.status(404).json({
+        success: false,
+        error: 'Chequera no encontrada'
+      });
+      return;
+    }
+
+    if (chequera._count.cheques > 0) {
+      res.status(400).json({
+        success: false,
+        error: `No se puede eliminar la chequera "${chequera.numero}" del banco "${chequera.banco?.nombre}" porque tiene ${chequera._count.cheques} cheque(s) registrado(s). Elimine primero todos los cheques asociados.`
+      });
+      return;
+    }
+
+    await prisma.chequera.delete({
+      where: { id: Number(id) }
+    });
+
+    console.log(`✅ PRISMA - Chequera eliminada exitosamente: ${id}`);
+
+    res.json({
+      success: true,
+      message: 'Chequera eliminada exitosamente'
+    });
+  } catch (error: any) {
+    console.error('❌ Error eliminando chequera:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};

@@ -32,10 +32,7 @@ export const errorHandler = (
   } else if (error.name === 'UnauthorizedError') {
     statusCode = 401;
     message = 'No autorizado';
-  } else if (error.name === 'SequelizeValidationError') {
-    statusCode = 400;
-    message = 'Error de validación de datos';
-  } else if (error.name === 'SequelizeUniqueConstraintError') {
+  } else if (error.message?.includes('Unique constraint failed')) {
     statusCode = 409;
     message = 'El registro ya existe';
   }

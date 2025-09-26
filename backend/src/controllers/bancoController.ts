@@ -1,144 +1,226 @@
 import { Request, Response } from 'express';
-import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { ApiResponse, BancoInput, PaginationQuery } from '../types';
-import { Banco, Chequera } from '../models';
-import { Op } from 'sequelize';
+import prisma from '../lib/prisma';
+import type { ApiResponse, BancoInput, PaginationQuery } from '../types';
 
-export const getBancos = asyncHandler(async (req: Request, res: Response) => {
-  const { page = 1, limit = 10, search, sortBy = 'nombre', sortOrder = 'ASC' } = req.query as PaginationQuery;
+export const getBancos = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 10, search, sortBy = 'nombre', sortOrder = 'asc' } = req.query as PaginationQuery;
 
-  const offset = (Number(page) - 1) * Number(limit);
-  const whereClause: any = {};
+    const offset = (Number(page) - 1) * Number(limit);
 
-  if (search) {
-    whereClause[Op.or] = [
-      { nombre: { [Op.like]: `%${search}%` } },
-      { codigo: { [Op.like]: `%${search}%` } }
-    ];
-  }
-
-  const { count, rows } = await Banco.findAndCountAll({
-    where: whereClause,
-    limit: Number(limit),
-    offset,
-    order: [[sortBy as string, sortOrder as string]]
-  });
-
-  const response: ApiResponse = {
-    success: true,
-    data: {
-      bancos: rows,
-      total: count,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(count / Number(limit))
+    const whereClause: any = {};
+    if (search) {
+      whereClause.OR = [
+        { nombre: { contains: search, mode: 'insensitive' } },
+        { codigo: { contains: search, mode: 'insensitive' } }
+      ];
     }
-  };
 
-  res.json(response);
-});
+    const orderBy: any = {};
+    orderBy[sortBy as string] = sortOrder === 'desc' ? 'desc' : 'asc';
 
-export const getBancoById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+    const [bancos, total] = await Promise.all([
+      prisma.banco.findMany({
+        where: whereClause,
+        orderBy,
+        skip: offset,
+        take: Number(limit),
+        include: {
+          _count: {
+            select: { chequeras: true }
+          }
+        }
+      }),
+      prisma.banco.count({ where: whereClause })
+    ]);
 
-  const banco = await Banco.findByPk(id);
+    const response: ApiResponse = {
+      success: true,
+      data: bancos,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+    };
 
-  if (!banco) {
-    throw new AppError('Banco no encontrado', 404);
+    res.json(response);
+  } catch (error: any) {
+    console.error('❌ Error obteniendo bancos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  const response: ApiResponse = {
-    success: true,
-    data: banco
-  };
+export const getBancoById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
 
-  res.json(response);
-});
+    const banco = await prisma.banco.findUnique({
+      where: { id: Number(id) },
+      include: {
+        chequeras: {
+          orderBy: { createdAt: 'desc' }
+        },
+        _count: {
+          select: { chequeras: true }
+        }
+      }
+    });
 
-export const createBanco = asyncHandler(async (req: Request, res: Response) => {
-  const { nombre, codigo, habilitado }: BancoInput = req.body;
+    if (!banco) {
+      res.status(404).json({
+        success: false,
+        error: 'Banco no encontrado'
+      });
+      return;
+    }
 
-  const banco = await Banco.create({
-    nombre,
-    codigo,
-    habilitado
-  });
-
-  const response: ApiResponse = {
-    success: true,
-    data: banco,
-    message: 'Banco creado exitosamente'
-  };
-
-  res.status(201).json(response);
-});
-
-export const updateBanco = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { nombre, codigo, habilitado }: BancoInput = req.body;
-
-  const banco = await Banco.findByPk(id);
-
-  if (!banco) {
-    throw new AppError('Banco no encontrado', 404);
+    res.json({
+      success: true,
+      data: banco
+    });
+  } catch (error: any) {
+    console.error('❌ Error obteniendo banco:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  await banco.update({
-    nombre,
-    codigo,
-    habilitado
-  });
+export const createBanco = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { codigo, nombre, habilitado = true }: BancoInput = req.body;
 
-  const response: ApiResponse = {
-    success: true,
-    data: banco,
-    message: 'Banco actualizado exitosamente'
-  };
+    const banco = await prisma.banco.create({
+      data: {
+        codigo,
+        nombre,
+        habilitado
+      }
+    });
 
-  res.json(response);
-});
+    console.log(`✅ PRISMA - Banco creado exitosamente: ${banco.id}`);
 
-export const deleteBanco = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+    res.status(201).json({
+      success: true,
+      data: banco,
+      message: 'Banco creado exitosamente'
+    });
+  } catch (error: any) {
+    console.error('❌ Error creando banco:', error);
 
-  const banco = await Banco.findByPk(id);
+    if (error.code === 'P2002') {
+      res.status(409).json({
+        success: false,
+        error: 'Ya existe un banco con este código'
+      });
+      return;
+    }
 
-  if (!banco) {
-    throw new AppError('Banco no encontrado', 404);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  // Check if bank has associated chequeras
-  const chequeras = await Chequera.findAll({
-    where: { bancoId: id }
-  });
+export const updateBanco = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { codigo, nombre, habilitado }: BancoInput = req.body;
 
-  if (chequeras.length > 0) {
-    throw new AppError(
-      `No se puede eliminar el banco "${banco.nombre}" porque tiene ${chequeras.length} chequera(s) asignada(s). Elimine primero todas las chequeras asociadas.`,
-      400
-    );
+    const banco = await prisma.banco.findUnique({
+      where: { id: Number(id) }
+    });
+
+    if (!banco) {
+      res.status(404).json({
+        success: false,
+        error: 'Banco no encontrado'
+      });
+      return;
+    }
+
+    const updatedBanco = await prisma.banco.update({
+      where: { id: Number(id) },
+      data: {
+        codigo,
+        nombre,
+        habilitado
+      }
+    });
+
+    console.log(`✅ PRISMA - Banco actualizado exitosamente: ${id}`);
+
+    res.json({
+      success: true,
+      data: updatedBanco,
+      message: 'Banco actualizado exitosamente'
+    });
+  } catch (error: any) {
+    console.error('❌ Error actualizando banco:', error);
+
+    if (error.code === 'P2002') {
+      res.status(409).json({
+        success: false,
+        error: 'Ya existe un banco con este código'
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
+};
 
-  await banco.destroy();
+export const deleteBanco = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
 
-  const response: ApiResponse = {
-    success: true,
-    message: 'Banco eliminado exitosamente'
-  };
+    const banco = await prisma.banco.findUnique({
+      where: { id: Number(id) },
+      include: {
+        _count: {
+          select: { chequeras: true }
+        }
+      }
+    });
 
-  res.json(response);
-});
+    if (!banco) {
+      res.status(404).json({
+        success: false,
+        error: 'Banco no encontrado'
+      });
+      return;
+    }
 
-export const getBancosHabilitados = asyncHandler(async (req: Request, res: Response) => {
-  const bancos = await Banco.findAll({
-    where: { habilitado: true },
-    order: [['nombre', 'ASC']]
-  });
+    if (banco._count.chequeras > 0) {
+      res.status(400).json({
+        success: false,
+        error: 'No se puede eliminar el banco porque tiene chequeras asociadas'
+      });
+      return;
+    }
 
-  const response: ApiResponse = {
-    success: true,
-    data: bancos
-  };
+    await prisma.banco.delete({
+      where: { id: Number(id) }
+    });
 
-  res.json(response);
-});
+    console.log(`✅ PRISMA - Banco eliminado exitosamente: ${id}`);
+
+    res.json({
+      success: true,
+      message: 'Banco eliminado exitosamente'
+    });
+  } catch (error: any) {
+    console.error('❌ Error eliminando banco:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
