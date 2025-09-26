@@ -30,7 +30,7 @@ import { Card, CardContent, CardHeader } from '../components/ui/Card';
 interface UsuarioFormData {
   username: string;
   email: string;
-  password: string;
+  password?: string;
   activo: string;
 }
 
@@ -296,7 +296,7 @@ const UsuariosPage: React.FC = () => {
     {
       key: 'username',
       header: 'Usuario',
-      render: (value: any, usuario: Usuario) => {
+      render: (_: any, usuario: Usuario) => {
         if (!usuario) return null;
         return <div className="font-medium text-gray-900">{usuario.username}</div>;
       },
@@ -304,7 +304,7 @@ const UsuariosPage: React.FC = () => {
     {
       key: 'email',
       header: 'Email',
-      render: (value: any, usuario: Usuario) => {
+      render: (_: any, usuario: Usuario) => {
         if (!usuario) return null;
         return <div className="text-gray-600">{usuario.email}</div>;
       },
@@ -312,7 +312,7 @@ const UsuariosPage: React.FC = () => {
     {
       key: 'activo',
       header: 'Estado',
-      render: (value: any, usuario: Usuario) => {
+      render: (_: any, usuario: Usuario) => {
         if (!usuario) return null;
 
         return (
@@ -331,7 +331,7 @@ const UsuariosPage: React.FC = () => {
     {
       key: 'createdAt',
       header: 'Fecha Creación',
-      render: (value: any, usuario: Usuario) => {
+      render: (_: any, usuario: Usuario) => {
         if (!usuario) return null;
 
         return (
@@ -344,7 +344,7 @@ const UsuariosPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Acciones',
-      render: (value: any, usuario: Usuario) => {
+      render: (_: any, usuario: Usuario) => {
         if (!usuario) return null;
 
         return (

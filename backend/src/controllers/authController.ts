@@ -207,7 +207,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
     message: 'Si el correo existe, recibirás un enlace de recuperación'
   };
 
-  res.json(response);
+  return res.json(response);
 });
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {

@@ -39,7 +39,7 @@ export default function ForgotPassword() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: { email?: string } = {};
-        error.errors.forEach(err => {
+        error.issues.forEach((err: any) => {
           if (err.path[0] === 'email') {
             fieldErrors.email = err.message;
           }

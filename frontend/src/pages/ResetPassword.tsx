@@ -76,7 +76,7 @@ export default function ResetPassword() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: { password?: string; confirmPassword?: string } = {};
-        error.errors.forEach(err => {
+        error.issues.forEach((err: any) => {
           if (err.path[0] === 'password') {
             fieldErrors.password = err.message;
           } else if (err.path[0] === 'confirmPassword') {

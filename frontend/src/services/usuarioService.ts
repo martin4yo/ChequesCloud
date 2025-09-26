@@ -1,5 +1,5 @@
 import { apiRequest } from '../lib/api';
-import type { PaginatedResponse, PaginationQuery, ApiResponse } from '../types';
+import type { PaginatedResponse, PaginationQuery } from '../types';
 
 export interface Usuario {
   id: number;
