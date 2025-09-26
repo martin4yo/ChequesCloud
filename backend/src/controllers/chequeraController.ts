@@ -256,8 +256,8 @@ export const updateChequera = async (req: Request, res: Response): Promise<void>
     }
 
     // Calculate new saldoActual if saldoInicial changed
-    let newSaldoActual = chequera.saldoActual;
-    if (saldoInicial !== chequera.saldoInicial) {
+    let newSaldoActual: number = Number(chequera.saldoActual);
+    if (Number(saldoInicial) !== Number(chequera.saldoInicial)) {
       const difference = Number(saldoInicial) - Number(chequera.saldoInicial);
       newSaldoActual = Number(chequera.saldoActual) + difference;
     }

@@ -54,6 +54,7 @@ export interface ChequeraInput {
   numero: string;
   bancoId: number;
   saldoInicial: number;
+  fechaCreacion?: string;
   activa: boolean;
   chequeDesde: number;
   chequeHasta: number;
@@ -91,6 +92,9 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+  total?: number;
+  page?: number;
+  totalPages?: number;
 }
 
 export interface PaginationQuery {
@@ -98,7 +102,7 @@ export interface PaginationQuery {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sortOrder?: 'ASC' | 'DESC' | 'asc' | 'desc';
 }
 
 export interface PaginatedResponse<T> {

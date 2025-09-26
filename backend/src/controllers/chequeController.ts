@@ -569,7 +569,7 @@ export const exportChequesToExcel = async (req: Request, res: Response): Promise
       // Add data row
       worksheet.addRow({
         id: cheque.id,
-        banco: cheque.chequera?.banco?.nombre || '',
+        banco: (cheque as any).chequera?.banco?.nombre || '',
         numero: cheque.numero,
         beneficiario: cheque.beneficiario,
         fechaEmision: moment(cheque.fechaEmision).add(1, 'day').format("DD/MM/YYYY"),
@@ -676,10 +676,11 @@ export const exportChequesToExcel = async (req: Request, res: Response): Promise
       // Format Total column (reuse totalColLetter from above)
       dynamicTable.getColumn(totalColLetter).numFmt = '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)';
 
-      // Add auto filter
+      // Add auto filter (reuse totalColLetter from above)
+      const autoFilterToCol = String.fromCharCode(66 + bancoHeaders.length);
       dynamicTable.autoFilter = {
         from: 'A1',
-        to: `${totalColLetter}1`
+        to: `${autoFilterToCol}1`
       };
     }
 
@@ -699,12 +700,12 @@ export const exportChequesToExcel = async (req: Request, res: Response): Promise
 
     console.log('✅ Excel export completed successfully');
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al exportar:', error);
     console.error('❌ Error occurred:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+      name: error?.name || 'Unknown',
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || 'No stack trace'
     });
 
     if (!res.headersSent) {
